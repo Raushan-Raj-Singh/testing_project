@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Lead Management Dashboard
 
-## Getting Started
+An enterprise-grade, Excel/CRM-style Lead Management web application featuring dynamic tables, full CRUD, optimistic updates with automatic rollback, custom sorting/filtering, batch updates, CSV import/export with formula injection sanitization, state persistence, and security hardening.
 
-First, run the development server:
+## Features
+- **Dynamic Tables & Columns**: Supports dynamic column types (Text, Number, Date, Select, Checkbox) with live schema updates.
+- **High-Performance AG Grid Integration**: Smooth scrolling, inline cell editing, column resizing, reordering, and visibility toggles.
+- **Smart Sorting & Filtering**: Dedicated follow-up date categories (`Overdue`, `Today`, `Upcoming`, `No Follow-up`) and priority ranking (`High`, `Medium`, `Low`).
+- **Bulk Operations & Batch CRUD**: Select multiple rows for bulk delete or bulk field editing with single server batch requests.
+- **CSV Import & Export**: Fast client-side CSV parsing, import validation preview, safe formula-injection protection (`=`, `+`, `-`, `@`, `\t`), and multi-format export.
+- **Optimistic Updates & Resilience**: Instant UI responsiveness with automatic database sync rollback on error.
+- **Table State Persistence**: Remembers column visibility, width, and sorting state across sessions per table ID.
+- **Security & Reliability**: MongoDB query injection protection, payload size limits (`MAX_BATCH_SIZE = 1000`), error stack trace sanitization, and health check API.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Tech Stack
+- **Framework**: Next.js (App Router, JavaScript)
+- **Frontend UI**: React 19, AG Grid Community, Lucide Icons, Tailwind CSS v4
+- **Database**: MongoDB & Mongoose
+- **Tooling**: ESLint, Next Compiler (Turbopack)
+
+## Project Structure
+```text
+├── app/
+│   ├── api/
+│   │   ├── health/        # Health check endpoint (GET /api/health)
+│   │   ├── rows/          # Row CRUD & Batch API endpoints
+│   │   └── table/         # Dynamic schema & Column management APIs
+│   ├── error.js           # Client error boundary
+│   ├── layout.js          # App layout & font styling
+│   └── page.js            # Main dashboard page
+├── components/
+│   ├── BulkEditModal.jsx  # Bulk edit modal dialog
+│   ├── ImportModal.jsx    # CSV import & preview modal
+│   ├── LeadTable.jsx     # Primary AG Grid component & state manager
+│   └── Toolbar.jsx        # Search, filters, & toolbar controls
+├── lib/
+│   ├── mongodb.js         # Mongoose connection & connection pooling
+│   └── seed.js            # Default table & columns seeder
+├── models/
+│   ├── Row.js             # Dynamic Row Mongoose schema
+│   └── Table.js           # Dynamic Table Mongoose schema
+├── utils/
+│   ├── csvExport.js       # CSV formatting & formula injection protection
+│   └── followup.js        # Date categorization & sorting helpers
+└── README.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Prerequisites
+- **Node.js**: v18.x or v20.x
+- **MongoDB**: Local MongoDB instance (`mongodb://localhost:27017`) or MongoDB Atlas URI
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Installation
+1. Clone the repository and navigate to the project directory:
+```bash
+cd testing_project
+```
+2. Install dependencies:
+```bash
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment Variables
+Create a `.env.local` file in the root directory (refer to `.env.example`):
+```env
+MONGODB_URI=mongodb://localhost:27017/testing_project
+NODE_ENV=development
+```
 
-## Learn More
+## Local Development
+Start the Next.js development server:
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-To learn more about Next.js, take a look at the following resources:
+## Production Build & Start
+To compile and start the production application:
+```bash
+npm run build
+npm run start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Overview
+- `GET /api/health` — Returns JSON database connection state (`healthy`/`unhealthy`).
+- `GET /api/table` — Resolves active dynamic table schema.
+- `GET /api/rows` — Fetches table rows.
+- `POST /api/rows` — Creates a new row.
+- `PATCH /api/rows/[rowId]` — Updates a specific row.
+- `DELETE /api/rows/[rowId]` — Deletes a single row.
+- `POST /api/rows/batch` — Bulk imports rows (Max 1,000).
+- `PATCH /api/rows/batch` — Bulk updates selected row IDs (Max 1,000).
+- `POST /api/rows/batch?action=delete` — Bulk deletes selected rows.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Security Notes
+- **Input Sanitization**: Dynamic keys starting with `$` or containing `.` are stripped server-side to prevent MongoDB operator injection.
+- **CSV Protection**: Export values starting with `=`, `+`, `-`, `@`, or `\t` are prefixed with `'` to neutralize formula execution in Microsoft Excel/Google Sheets.
+- **HTTP Headers**: Security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`) are enforced via `next.config.mjs`.
 
-## Deploy on Vercel
+## Backup & Restore Strategy
+1. **Backup**:
+   ```bash
+   mongodump --uri="mongodb://localhost:27017/testing_project" --out=./backups/$(date +%F)
+   ```
+2. **Restore**:
+   ```bash
+   mongorestore --uri="mongodb://localhost:27017/testing_project_restored" ./backups/YYYY-MM-DD/testing_project
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment & Health Check
+- **Health Verification**: Call `GET http://localhost:3000/api/health` to confirm server and database status.
+- **CI/CD**: Included GitHub Actions workflow (`.github/workflows/ci.yml`) runs ESLint and Next.js production builds automatically on push/PR.
