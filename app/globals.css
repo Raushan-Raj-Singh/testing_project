@@ -103,6 +103,7 @@ body {
 .ag-theme-alpine-dark {
   --ag-background-color: #0d131f !important;
   --ag-header-background-color: #111827 !important;
+  --ag-odd-row-background-color: #0d131f !important;
   --ag-row-hover-color: #1a2436 !important;
   --ag-border-color: rgba(255, 255, 255, 0.08) !important;
   --ag-header-foreground-color: #9ca3af !important;
@@ -110,24 +111,57 @@ body {
   --ag-secondary-foreground-color: #6b7280 !important;
   --ag-checkbox-checked-color: #3b82f6 !important;
   --ag-range-selection-border-color: #3b82f6 !important;
+  --ag-modal-overlay-background-color: rgba(11, 15, 23, 0.75) !important;
   --ag-row-height: 54px !important;
   --ag-header-height: 48px !important;
   --ag-cell-horizontal-padding: 16px !important;
+  background-color: #0d131f !important;
 }
 
-.ag-theme-alpine .ag-root-wrapper {
+.ag-theme-alpine .ag-root-wrapper,
+.ag-theme-alpine .ag-root-wrapper-body,
+.ag-theme-alpine .ag-root,
+.ag-theme-alpine .ag-body,
+.ag-theme-alpine .ag-body-viewport,
+.ag-theme-alpine .ag-body-horizontal-scroll,
+.ag-theme-alpine .ag-body-horizontal-scroll-viewport,
+.ag-theme-alpine .ag-body-vertical-scroll,
+.ag-theme-alpine .ag-body-vertical-scroll-viewport,
+.ag-theme-alpine .ag-center-cols-viewport,
+.ag-theme-alpine .ag-center-cols-container,
+.ag-theme-alpine .ag-center-cols-clipper,
+.ag-theme-alpine .ag-pinned-left-cols-container,
+.ag-theme-alpine .ag-pinned-right-cols-container,
+.ag-theme-alpine .ag-horizontal-left-spacer,
+.ag-theme-alpine .ag-horizontal-right-spacer,
+.ag-theme-alpine .ag-empty-filler,
+.ag-theme-alpine .ag-full-width-container,
+.ag-theme-alpine .ag-floating-top,
+.ag-theme-alpine .ag-floating-bottom,
+.ag-theme-alpine .ag-scroll-sizers,
+.ag-theme-alpine .ag-layout-auto-height .ag-center-cols-viewport,
+.ag-theme-alpine .ag-layout-auto-height .ag-body-viewport {
   background-color: #0d131f !important;
+  background-image: none !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
   color: #f9fafb !important;
   border-radius: 12px !important;
 }
 
-.ag-theme-alpine .ag-header {
+.ag-theme-alpine .ag-header,
+.ag-theme-alpine .ag-header-viewport,
+.ag-theme-alpine .ag-header-container,
+.ag-theme-alpine .ag-header-row,
+.ag-theme-alpine .ag-pinned-left-header,
+.ag-theme-alpine .ag-pinned-right-header,
+.ag-theme-alpine .ag-header-overlay {
   background-color: #111827 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-.ag-theme-alpine .ag-header-cell {
+.ag-theme-alpine .ag-header-cell,
+.ag-theme-alpine .ag-header-group-cell,
+.ag-theme-alpine .ag-header-cell-resize {
   background-color: #111827 !important;
   color: #9ca3af !important;
   font-weight: 600 !important;
@@ -140,6 +174,29 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
   color: #f9fafb !important;
   height: 54px !important;
+}
+
+/* AG Grid row pseudo-elements (.ag-row::after and .ag-row::before) that fill empty trailing space */
+.ag-theme-alpine .ag-row:not(.ag-header-row, .ag-full-width-row):after,
+.ag-theme-alpine .ag-row.ag-embedded-full-width-row:after,
+.ag-theme-alpine .ag-row:after,
+.ag-theme-alpine .ag-row:before,
+.ag-row:not(.ag-header-row, .ag-full-width-row):after,
+.ag-row.ag-embedded-full-width-row:after,
+.ag-row:after,
+.ag-row:before {
+  background-color: #0d131f !important;
+  background-image: none !important;
+}
+
+.ag-theme-alpine .ag-row-even:not(.ag-header-row, .ag-full-width-row):after,
+.ag-theme-alpine .ag-row-even:after {
+  background-color: #0f172a !important;
+}
+
+.ag-theme-alpine .ag-row-hover:not(.ag-header-row, .ag-full-width-row):after,
+.ag-theme-alpine .ag-row-hover:after {
+  background-color: #1a2436 !important;
 }
 
 .ag-theme-alpine .ag-row-odd {
@@ -167,28 +224,82 @@ body {
 
 .ag-theme-alpine .ag-pinned-left-header,
 .ag-theme-alpine .ag-pinned-right-header,
+.ag-theme-alpine .ag-header-row-column {
+  background-color: #111827 !important;
+}
+
 .ag-theme-alpine .ag-cell-pinned-left,
 .ag-theme-alpine .ag-cell-pinned-right {
   background-color: #0d131f !important;
 }
 
-/* AG Grid Native agSelectCellEditor Dark Overrides */
+/* AG Grid Native Cell Editors & Inline Editing Overrides */
+.ag-theme-alpine,
+.ag-theme-alpine-dark {
+  --ag-control-panel-background-color: #111827 !important;
+}
+
+/* Ensure cell undergoing inline editing stretches full width and resets padding and background */
+.ag-theme-alpine .ag-cell.ag-cell-inline-editing,
+.ag-theme-alpine .ag-cell-inline-editing {
+  background-color: #111827 !important;
+  background-image: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding: 0 !important;
+  border: 1px solid #3b82f6 !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  box-shadow: 0 0 0 1px #3b82f6, 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  z-index: 10 !important;
+}
+
 .ag-theme-alpine .ag-select-cell-editor,
 .ag-theme-alpine .ag-rich-select,
 .ag-theme-alpine .ag-picker-field-wrapper,
+.ag-theme-alpine .ag-cell-editor {
+  background-color: #111827 !important;
+  color: #f9fafb !important;
+  border: none !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
 .ag-theme-alpine .ag-popup-editor,
-.ag-theme-alpine .ag-cell-editor,
-.ag-theme-alpine .ag-cell-inline-editing,
 .ag-theme-alpine .ag-popup,
 .ag-theme-alpine .ag-popup-child,
 .ag-popup-child,
 .ag-popup {
+  background-color: transparent !important;
+  color: #f9fafb !important;
+  border: none !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+  z-index: 99999 !important;
+}
+
+/* Allow AG Grid popups to float freely over grid boundaries when rows are few */
+.ag-theme-alpine .ag-root-wrapper-body,
+.ag-theme-alpine .ag-root,
+.ag-theme-alpine .ag-body-viewport {
+  overflow-y: visible !important;
+}
+
+/* Ensure input and wrappers occupy 100% full width and height end-to-end */
+.ag-theme-alpine .ag-cell-inline-editing .ag-cell-wrapper,
+.ag-theme-alpine .ag-cell-inline-editing .ag-cell-edit-wrapper,
+.ag-theme-alpine .ag-cell-inline-editing .ag-cell-editor,
+.ag-theme-alpine .ag-cell-inline-editing .ag-cell-editor .ag-wrapper,
+.ag-theme-alpine .ag-cell-inline-editing .ag-cell-editor input,
+.ag-theme-alpine .ag-cell-inline-editing input {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
   background-color: #111827 !important;
   color: #f9fafb !important;
-  border: 1px solid #3b82f6 !important;
-  border-radius: 8px !important;
-  overflow: hidden !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  box-sizing: border-box !important;
 }
 
 .ag-theme-alpine select,
@@ -202,15 +313,16 @@ body {
   color: #f9fafb !important;
   border: none !important;
   outline: none !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
   box-shadow: none !important;
 }
 
 .ag-theme-alpine select:focus,
 .ag-theme-alpine input:focus,
 .ag-theme-alpine .ag-select-cell-editor:focus,
-.ag-theme-alpine .ag-cell-inline-editing:focus {
+.ag-theme-alpine .ag-cell-inline-editing:focus,
+.ag-theme-alpine .ag-cell-inline-editing:focus-within {
   background-color: #111827 !important;
   color: #f9fafb !important;
   outline: none !important;
@@ -235,9 +347,40 @@ body {
   color: #3b82f6 !important;
 }
 
+.ag-theme-alpine .ag-popup-editor {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
 
+/* Hide scrollbar utility for date preset tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-
-
-
+/* Custom Slim Scrollbar for Dropdowns and Dialogs */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(17, 24, 39, 0.6);
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(17, 24, 39, 0.5);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 9999px;
+  border: 1px solid rgba(17, 24, 39, 0.4);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
 

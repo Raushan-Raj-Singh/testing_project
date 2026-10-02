@@ -67,7 +67,7 @@ export async function POST(req) {
     }
 
     let special = "normal";
-    if (type === "date" && isFollowup) {
+    if ((type === "date" || type === "datetime") && isFollowup) {
       special = "followup";
     } else if (type === "dropdown" && isPriority) {
       special = "priority";

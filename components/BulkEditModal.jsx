@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Edit3, Loader2 } from "lucide-react";
+import { X, Edit3, Loader2, Calendar } from "lucide-react";
+import ThemeDatePicker from "@/components/ThemeDatePicker";
 
 export default function BulkEditModal({
   isOpen,
@@ -14,6 +15,7 @@ export default function BulkEditModal({
   const [value, setValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -158,21 +160,53 @@ export default function BulkEditModal({
                 className="px-3 py-2 text-sm rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--accent)] font-mono transition-all"
               />
             ) : targetCol.type === "date" ? (
-              <input
-                type="date"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                className="px-3 py-2 text-sm rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--accent)] font-mono transition-all"
-                style={{ colorScheme: "dark" }}
-              />
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowDatePicker(!showDatePicker)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--accent)] font-mono text-left flex items-center justify-between cursor-pointer"
+                >
+                  <span className={value ? "text-[var(--fg)]" : "text-[var(--fg-subtle)]"}>
+                    {value || "Select date..."}
+                  </span>
+                  <Calendar className="w-4 h-4 text-[var(--accent)] shrink-0" />
+                </button>
+                {showDatePicker && (
+                  <div className="absolute top-full left-0 mt-1 z-50">
+                    <ThemeDatePicker
+                      value={value}
+                      onChange={(newVal) => setValue(newVal)}
+                      showTime={false}
+                      onConfirm={() => setShowDatePicker(false)}
+                      onCancel={() => setShowDatePicker(false)}
+                    />
+                  </div>
+                )}
+              </div>
             ) : targetCol.type === "datetime" ? (
-              <input
-                type="datetime-local"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                className="px-3 py-2 text-sm rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--accent)] font-mono transition-all"
-                style={{ colorScheme: "dark" }}
-              />
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowDatePicker(!showDatePicker)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--accent)] font-mono text-left flex items-center justify-between cursor-pointer"
+                >
+                  <span className={value ? "text-[var(--fg)]" : "text-[var(--fg-subtle)]"}>
+                    {value || "Select date & time..."}
+                  </span>
+                  <Calendar className="w-4 h-4 text-[var(--accent)] shrink-0" />
+                </button>
+                {showDatePicker && (
+                  <div className="absolute top-full left-0 mt-1 z-50">
+                    <ThemeDatePicker
+                      value={value}
+                      onChange={(newVal) => setValue(newVal)}
+                      showTime={true}
+                      onConfirm={() => setShowDatePicker(false)}
+                      onCancel={() => setShowDatePicker(false)}
+                    />
+                  </div>
+                )}
+              </div>
             ) : targetCol.type === "dropdown" ? (
               <select
                 value={value}

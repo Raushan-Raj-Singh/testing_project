@@ -93,16 +93,15 @@ export default function Home() {
       const tableData = await tableRes.json();
       const rowsData = await rowsRes.json();
 
-      if (tableData.success) {
+      if (tableData.success && rowsData.success) {
         setTable(tableData.data);
+        setRows(sortRowsByFollowupAndPriority(rowsData.data, tableData.data.columns || []));
       } else {
-        setError(tableData.message || "Failed to load table schema.");
-      }
+        if (tableData.success) setTable(tableData.data);
+        else setError(tableData.message || "Failed to load table schema.");
 
-      if (rowsData.success) {
-        setRows(rowsData.data);
-      } else {
-        setError(rowsData.message || "Failed to load row data.");
+        if (rowsData.success) setRows(rowsData.data);
+        else setError(rowsData.message || "Failed to load row data.");
       }
     } catch (err) {
       console.error("Data loading error:", err);
@@ -127,16 +126,21 @@ export default function Home() {
         const rowsData = await rowsRes.json();
 
         if (!ignore) {
-          if (tableData.success) {
+          if (tableData.success && rowsData.success) {
             setTable(tableData.data);
+            setRows(sortRowsByFollowupAndPriority(rowsData.data, tableData.data.columns || []));
           } else {
-            setError(tableData.message || "Failed to load table schema.");
-          }
+            if (tableData.success) {
+              setTable(tableData.data);
+            } else {
+              setError(tableData.message || "Failed to load table schema.");
+            }
 
-          if (rowsData.success) {
-            setRows(rowsData.data);
-          } else {
-            setError(rowsData.message || "Failed to load row data.");
+            if (rowsData.success) {
+              setRows(rowsData.data);
+            } else {
+              setError(rowsData.message || "Failed to load row data.");
+            }
           }
         }
       } catch (err) {
@@ -549,7 +553,7 @@ export default function Home() {
         />
 
         {/* Data View Section: AG Grid Table or Kanban Board */}
-        <div className="flex-1 min-h-[450px] relative">
+        <div className="flex-1 min-h-[450px] relative z-10">
           {activeView === "kanban" ? (
             <KanbanBoard
               rows={filteredRows}

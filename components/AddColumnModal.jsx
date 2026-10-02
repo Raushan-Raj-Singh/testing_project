@@ -106,7 +106,7 @@ export default function AddColumnModal({
         name: trimmedName,
         type,
         options: validOptions,
-        isFollowup: type === "date" ? isFollowup : false,
+        isFollowup: (type === "date" || type === "datetime") ? isFollowup : false,
         isPriority: type === "dropdown" ? isPriority : false,
       });
       onClose();
@@ -176,9 +176,8 @@ export default function AddColumnModal({
             </label>
             <select
               value={type}
-              disabled={!!editingColumn}
               onChange={(e) => setType(e.target.value)}
-              className="px-3 py-2 text-sm rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--accent)] transition-all disabled:opacity-60"
+              className="px-3 py-2 text-sm rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--accent)] transition-all cursor-pointer"
             >
               {COLUMN_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -229,8 +228,8 @@ export default function AddColumnModal({
             </div>
           )}
 
-          {/* Checkbox "Use as Follow-up Date" (if type === 'date') */}
-          {type === "date" && (
+          {/* Checkbox "Use as Follow-up Date" (if type === 'date' || type === 'datetime') */}
+          {(type === "date" || type === "datetime") && (
             <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]">
               <input
                 type="checkbox"

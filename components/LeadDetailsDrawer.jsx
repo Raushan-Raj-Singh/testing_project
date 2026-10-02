@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import PriorityBadge from "@/components/PriorityBadge";
+import ThemeDatePicker from "@/components/ThemeDatePicker";
 import {
   X,
   Edit2,
@@ -23,13 +24,16 @@ export default function LeadDetailsDrawer({
 }) {
   const [formData, setFormData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [activeDatePickerField, setActiveDatePickerField] = useState(null);
 
   useEffect(() => {
-    if (leadRow) {
-      setFormData({ ...(leadRow.data || leadRow) });
-    } else {
-      setFormData({});
-    }
+    React.startTransition(() => {
+      if (leadRow) {
+        setFormData({ ...(leadRow.data || leadRow) });
+      } else {
+        setFormData({});
+      }
+    });
   }, [leadRow]);
 
   if (!isOpen || !leadRow) return null;
@@ -162,17 +166,35 @@ export default function LeadDetailsDrawer({
 
             {/* Follow-up Date */}
             {followupCol && (
-              <div>
+              <div className="relative">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--fg-muted)] mb-1">
                   Follow-up Date
                 </label>
-                <input
-                  type="date"
-                  value={followupVal}
-                  onChange={(e) => handleChange(followupCol.id, e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border bg-[var(--surface)] border-[var(--border)] text-[var(--fg)] font-mono focus:outline-hidden focus:border-[var(--primary)]"
-                  style={{ colorScheme: "dark" }}
-                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveDatePickerField(
+                      activeDatePickerField === followupCol.id ? null : followupCol.id
+                    )
+                  }
+                  className="w-full px-3 py-2 rounded-lg border bg-[var(--surface)] border-[var(--border)] text-[var(--fg)] font-mono text-left text-xs flex items-center justify-between hover:border-[var(--primary)] transition-all cursor-pointer"
+                >
+                  <span className={followupVal ? "text-[var(--fg)]" : "text-[var(--fg-subtle)]"}>
+                    {followupVal || "Set follow-up date..."}
+                  </span>
+                  <Calendar className="w-4 h-4 text-[var(--primary)] shrink-0" />
+                </button>
+                {activeDatePickerField === followupCol.id && (
+                  <div className="absolute top-full left-0 mt-1 z-50">
+                    <ThemeDatePicker
+                      value={followupVal}
+                      onChange={(newVal) => handleChange(followupCol.id, newVal)}
+                      showTime={false}
+                      onConfirm={() => setActiveDatePickerField(null)}
+                      onCancel={() => setActiveDatePickerField(null)}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -229,6 +251,132 @@ export default function LeadDetailsDrawer({
                 className="w-full px-3 py-2 rounded-lg border bg-[var(--surface)] border-[var(--border)] text-[var(--fg)] focus:outline-hidden focus:border-[var(--primary)] resize-none"
               />
             </div>
+
+            {/* Other Dynamic Custom Fields */}
+            {columns
+              .filter((c) => {
+                const id = c.id.toLowerCase();
+                const name = c.name.toLowerCase();
+                if (id === "project" || name === "project") return false;
+                if (id === "phone" || name === "phone") return false;
+                if (id === "email" || name === "email") return false;
+                if (c.special === "followup" || id === "followup" || name === "followup") return false;
+                if (c.special === "status" || id === "status" || name === "status") return false;
+                if (c.special === "priority" || id === "priority" || name === "priority") return false;
+                if (id === "notes" || name === "notes") return false;
+                return true;
+              })
+              .map((c) => {
+                const val = formData[c.id] !== undefined ? formData[c.id] : "";
+                return (
+                  <div key={c.id}>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--fg-muted)] mb-1">
+                      {c.name}
+                    </label>
+                    {c.type === "dropdown" ? (
+                      <select
+                        value={val}
+                        onChange={(e) => handleChange(c.id, e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border bg-[var(--surface)] border-[var(--border)] text-[var(--fg)] focus:outline-hidden focus:border-[var(--primary)] font-medium cursor-pointer"
+                      >
+                        <option value="">Select an option</option>
+                        {(c.options || []).map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    ) : c.type === "checkbox" ? (
+                      <label className="flex items-center gap-2 cursor-pointer py-1">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(val)}
+                          onChange={(e) => handleChange(c.id, e.target.checked)}
+                          className="w-4 h-4 rounded border-[var(--border)] bg-[var(--surface)] text-[var(--primary)] focus:ring-[var(--primary)] cursor-pointer"
+                        />
+                        <span className="text-xs text-[var(--fg)]">Enabled</span>
+                      </label>
+                    ) : c.type === "date" ? (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveDatePickerField(
+                              activeDatePickerField === c.id ? null : c.id
+                            )
+                          }
+                          className="w-full px-3 py-2 rounded-lg border bg-[var(--surface)] border-[var(--border)] text-[var(--fg)] font-mono text-left text-xs flex items-center justify-between hover:border-[var(--primary)] transition-all cursor-pointer"
+                        >
+                          <span className={val ? "text-[var(--fg)]" : "text-[var(--fg-subtle)]"}>
+                            {val || "Select date..."}
+                          </span>
+                          <Calendar className="w-4 h-4 text-[var(--primary)] shrink-0" />
+                        </button>
+                        {activeDatePickerField === c.id && (
+                          <div className="absolute top-full left-0 mt-1 z-50">
+                            <ThemeDatePicker
+                              value={val}
+                              onChange={(newVal) => handleChange(c.id, newVal)}
+                              showTime={false}
+                              onConfirm={() => setActiveDatePickerField(null)}
+                              onCancel={() => setActiveDatePickerField(null)}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ) : c.type === "datetime" ? (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveDatePickerField(
+                              activeDatePickerField === c.id ? null : c.id
+                            )
+                          }
+                          className="w-full px-3 py-2 rounded-lg border bg-[var(--surface)] border-[var(--border)] text-[var(--fg)] font-mono text-left text-xs flex items-center justify-between hover:border-[var(--primary)] transition-all cursor-pointer"
+                        >
+                          <span className={val ? "text-[var(--fg)]" : "text-[var(--fg-subtle)]"}>
+                            {val || "Select date & time..."}
+                          </span>
+                          <Calendar className="w-4 h-4 text-[var(--primary)] shrink-0" />
+                        </button>
+                        {activeDatePickerField === c.id && (
+                          <div className="absolute top-full left-0 mt-1 z-50">
+                            <ThemeDatePicker
+                              value={val}
+                              onChange={(newVal) => handleChange(c.id, newVal)}
+                              showTime={true}
+                              onConfirm={() => setActiveDatePickerField(null)}
+                              onCancel={() => setActiveDatePickerField(null)}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ) : c.type === "number" ? (
+                      <input
+                        type="number"
+                        value={val}
+                        onChange={(e) => handleChange(c.id, e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border bg-[var(--surface)] border-[var(--border)] text-[var(--fg)] font-mono focus:outline-hidden focus:border-[var(--primary)]"
+                      />
+                    ) : c.type === "longText" ? (
+                      <textarea
+                        rows="2"
+                        value={val}
+                        onChange={(e) => handleChange(c.id, e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border bg-[var(--surface)] border-[var(--border)] text-[var(--fg)] focus:outline-hidden focus:border-[var(--primary)] resize-none"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={val}
+                        onChange={(e) => handleChange(c.id, e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border bg-[var(--surface)] border-[var(--border)] text-[var(--fg)] focus:outline-hidden focus:border-[var(--primary)]"
+                      />
+                    )}
+                  </div>
+                );
+              })}
           </div>
 
           {/* Quick Actions Grid matching Reference Image */}

@@ -14,24 +14,24 @@ import { ModuleRegistry, AllCommunityModule } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { getFollowupCategory } from "@/utils/followup";
-import { Edit2, Trash2, Calendar, Plus, RotateCcw, AlertTriangle, FileX, Loader2 } from "lucide-react";
+import StatusBadge from "@/components/StatusBadge";
+import PriorityBadge from "@/components/PriorityBadge";
+import { Edit2, Trash2, Calendar, Plus, RotateCcw, AlertTriangle, FileX, Loader2, ChevronDown, Check, Phone, Mail, MoreVertical } from "lucide-react";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
+import ThemeDatePicker from "@/components/ThemeDatePicker";
+
 /**
- * Custom Date Cell Editor - Opens Native Calendar Picker
+ * Custom Date Cell Editor - Opens Theme-Matching Calendar Picker
  */
 const DateCellEditor = forwardRef(({ value, onValueChange, stopEditing, api }, ref) => {
   const initialVal = value && value !== "No Date" ? value : "";
   const [val, setVal] = useState(initialVal);
-  const inputRef = useRef(null);
   const valRef = useRef(initialVal);
 
   useGridCellEditor({
     getValue() {
-      if (inputRef.current && inputRef.current.value !== undefined) {
-        valRef.current = inputRef.current.value;
-      }
       return valRef.current;
     },
     isCancelAfterEnd() {
@@ -41,9 +41,6 @@ const DateCellEditor = forwardRef(({ value, onValueChange, stopEditing, api }, r
 
   useImperativeHandle(ref, () => ({
     getValue() {
-      if (inputRef.current && inputRef.current.value !== undefined) {
-        valRef.current = inputRef.current.value;
-      }
       return valRef.current;
     },
     isCancelAfterEnd() {
@@ -51,30 +48,166 @@ const DateCellEditor = forwardRef(({ value, onValueChange, stopEditing, api }, r
     },
   }));
 
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, []);
-
-  const updateValue = (newVal) => {
-    const cleanVal = newVal && newVal !== "No Date" ? newVal : "";
-    valRef.current = cleanVal;
-    setVal(cleanVal);
-    if (onValueChange) {
-      onValueChange(cleanVal);
-    }
+  const handleDateChange = (newVal) => {
+    valRef.current = newVal;
+    setVal(newVal);
   };
 
-  const handleSave = () => {
-    let finalVal = valRef.current;
-    if (inputRef.current && inputRef.current.value !== undefined) {
-      finalVal = inputRef.current.value;
-      valRef.current = finalVal;
+  const handleConfirm = (finalVal) => {
+    valRef.current = finalVal;
+    if (onValueChange) onValueChange(finalVal);
+    setTimeout(() => {
+      if (stopEditing) stopEditing(false);
+      else if (api) api.stopEditing(false);
+    }, 0);
+  };
+
+  const handleCancel = () => {
+    if (stopEditing) stopEditing(true);
+    else if (api) api.stopEditing(true);
+  };
+
+  return (
+    <div
+      className="p-1"
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <ThemeDatePicker
+        value={val}
+        onChange={handleDateChange}
+        showTime={false}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+    </div>
+  );
+});
+DateCellEditor.displayName = "DateCellEditor";
+
+/**
+ * Custom DateTime Cell Editor - Opens Theme-Matching Calendar & Time Picker
+ */
+const DateTimeCellEditor = forwardRef(({ value, onValueChange, stopEditing, api }, ref) => {
+  const initialVal = value && value !== "No Date" ? value : "";
+  const [val, setVal] = useState(initialVal);
+  const valRef = useRef(initialVal);
+
+  useGridCellEditor({
+    getValue() {
+      return valRef.current;
+    },
+    isCancelAfterEnd() {
+      return false;
+    },
+  });
+
+  useImperativeHandle(ref, () => ({
+    getValue() {
+      return valRef.current;
+    },
+    isCancelAfterEnd() {
+      return false;
+    },
+  }));
+
+  const handleDateTimeChange = (newVal) => {
+    valRef.current = newVal;
+    setVal(newVal);
+  };
+
+  const handleConfirm = (finalVal) => {
+    valRef.current = finalVal;
+    if (onValueChange) onValueChange(finalVal);
+    setTimeout(() => {
+      if (stopEditing) stopEditing(false);
+      else if (api) api.stopEditing(false);
+    }, 0);
+  };
+
+  const handleCancel = () => {
+    if (stopEditing) stopEditing(true);
+    else if (api) api.stopEditing(true);
+  };
+
+  return (
+    <div
+      className="p-1"
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <ThemeDatePicker
+        value={val}
+        onChange={handleDateTimeChange}
+        showTime={true}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+    </div>
+  );
+});
+DateTimeCellEditor.displayName = "DateTimeCellEditor";
+/**
+ * Custom Sharp Dark Select Cell Editor
+ */
+/**
+ * Custom Luxury Themed Floating Dropdown Cell Editor
+ */
+const SelectCellEditor = forwardRef(({ value, options = [], colDef, column, stopEditing, api, node, onValueChange }, ref) => {
+  const [val, setVal] = useState(value || "");
+  const valRef = useRef(value || "");
+  const containerRef = useRef(null);
+
+  // Fallback options list from column schema or defaults
+  const availableOptions = useMemo(() => {
+    if (Array.isArray(options) && options.length > 0) return options;
+    if (column && Array.isArray(column.options) && column.options.length > 0) return column.options;
+    if (colDef && colDef.cellEditorParams && Array.isArray(colDef.cellEditorParams.values)) {
+      return colDef.cellEditorParams.values;
     }
+    if (colDef && colDef.cellEditorParams && Array.isArray(colDef.cellEditorParams.options)) {
+      return colDef.cellEditorParams.options;
+    }
+    return ["New", "Follow-up", "Qualified", "Closed", "Lost"];
+  }, [options, column, colDef]);
+
+  const isPriorityCol = colDef?.field === "priority" || column?.colId === "priority" || column?.special === "priority";
+  const isStatusCol = colDef?.field === "status" || column?.colId === "status" || column?.special === "status" || colDef?.headerName?.toLowerCase() === "status";
+
+  useGridCellEditor({
+    getValue() {
+      return valRef.current;
+    },
+    isCancelAfterEnd() {
+      return false;
+    },
+  });
+
+  useImperativeHandle(ref, () => ({
+    getValue() {
+      return valRef.current;
+    },
+    isCancelAfterEnd() {
+      return false;
+    },
+  }));
+
+  const handleSelectOption = (opt) => {
+    valRef.current = opt;
+    setVal(opt);
+
+    // 1. Notify AG Grid cell editor pipeline
     if (onValueChange) {
-      onValueChange(finalVal);
+      onValueChange(opt);
     }
+
+    // 2. Directly write to row node to guarantee AG Grid data and table sync
+    const field = colDef?.field || (column && column.getId ? column.getId() : undefined);
+    if (node && field && node.setDataValue) {
+      node.setDataValue(field, opt);
+    }
+
+    // 3. Stop editing cleanly
     setTimeout(() => {
       if (stopEditing) {
         stopEditing(false);
@@ -84,253 +217,53 @@ const DateCellEditor = forwardRef(({ value, onValueChange, stopEditing, api }, r
     }, 0);
   };
 
-  const handleChange = (e) => {
-    console.log("[DATE E2E] onChange event:", e.target.value);
-    updateValue(e.target.value);
-  };
-
   return (
     <div
-      className="flex items-center gap-1.5 w-full h-full px-2 py-1 bg-[var(--surface)] border border-[var(--accent)] rounded-md shadow-lg"
+      ref={containerRef}
+      className="p-1 select-none font-sans"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
-      <input
-        ref={inputRef}
-        type="date"
-        aria-label="Select Date"
-        value={val}
-        onChange={handleChange}
-        onInput={handleChange}
-        onBlur={(e) => {
-          if (e.target.value !== undefined) {
-            updateValue(e.target.value);
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            handleSave();
-          }
-          if (e.key === "Escape") {
-            if (stopEditing) stopEditing(true);
-            else if (api) api.stopEditing(true);
-          }
-        }}
-        className="flex-1 h-8 bg-[var(--surface-2)] text-[var(--fg)] border border-[var(--border)] rounded px-2 font-mono text-xs focus:outline-hidden focus:border-[var(--accent)]"
-        style={{ colorScheme: "dark" }}
-      />
-      <button
-        type="button"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleSave();
-        }}
-        className="px-2.5 py-1 text-xs font-semibold rounded bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 shrink-0 cursor-pointer shadow-xs"
-      >
-        OK
-      </button>
-    </div>
-  );
-});
-DateCellEditor.displayName = "DateCellEditor";
-
-/**
- * Custom DateTime Cell Editor - Opens Native Calendar & Time Picker
- */
-const DateTimeCellEditor = forwardRef(({ value, onValueChange, stopEditing, api }, ref) => {
-  const initialVal = value && value !== "No Date" ? value : "";
-  const [val, setVal] = useState(initialVal);
-  const inputRef = useRef(null);
-  const valRef = useRef(initialVal);
-
-  useGridCellEditor({
-    getValue() {
-      if (inputRef.current && inputRef.current.value !== undefined) {
-        valRef.current = inputRef.current.value;
-      }
-      return valRef.current;
-    },
-    isCancelAfterEnd() {
-      return false;
-    },
-  });
-
-  useImperativeHandle(ref, () => ({
-    getValue() {
-      if (inputRef.current && inputRef.current.value !== undefined) {
-        valRef.current = inputRef.current.value;
-      }
-      return valRef.current;
-    },
-    isCancelAfterEnd() {
-      return false;
-    },
-  }));
-
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, []);
-
-  const updateValue = (newVal) => {
-    const cleanVal = newVal && newVal !== "No Date" ? newVal : "";
-    valRef.current = cleanVal;
-    setVal(cleanVal);
-    if (onValueChange) {
-      onValueChange(cleanVal);
-    }
-  };
-
-  const handleSave = () => {
-    if (inputRef.current && inputRef.current.value !== undefined) {
-      valRef.current = inputRef.current.value;
-      if (onValueChange) onValueChange(inputRef.current.value);
-    }
-    if (stopEditing) {
-      stopEditing(false);
-    } else if (api) {
-      api.stopEditing(false);
-    }
-  };
-
-  const handleChange = (e) => {
-    updateValue(e.target.value);
-  };
-
-  return (
-    <div
-      className="flex items-center gap-1.5 w-full h-full px-2 py-1 bg-[var(--surface)] border border-[var(--accent)] rounded-md shadow-lg"
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <input
-        ref={inputRef}
-        type="datetime-local"
-        aria-label="Select Date and Time"
-        value={val}
-        onChange={handleChange}
-        onInput={handleChange}
-        onBlur={(e) => {
-          if (e.target.value !== undefined) {
-            updateValue(e.target.value);
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            handleSave();
-          }
-          if (e.key === "Escape") {
-            if (stopEditing) stopEditing(true);
-            else if (api) api.stopEditing(true);
-          }
-        }}
-        className="flex-1 h-8 bg-[var(--surface-2)] text-[var(--fg)] border border-[var(--border)] rounded px-2 font-mono text-xs focus:outline-hidden focus:border-[var(--accent)]"
-        style={{ colorScheme: "dark" }}
-      />
-      <button
-        type="button"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleSave();
-        }}
-        className="px-2.5 py-1 text-xs font-semibold rounded bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 shrink-0 cursor-pointer shadow-xs"
-      >
-        OK
-      </button>
-    </div>
-  );
-});
-/**
- * Custom Sharp Dark Select Cell Editor
- */
-const SelectCellEditor = forwardRef(({ value, options = [], colDef, column, stopEditing, api, node }, ref) => {
-  const [val, setVal] = useState(value || "");
-  const selectRef = useRef(null);
-
-  // Fallback options list from column schema or defaults
-  const availableOptions = useMemo(() => {
-    if (Array.isArray(options) && options.length > 0) return options;
-    if (column && Array.isArray(column.options) && column.options.length > 0) return column.options;
-    if (colDef && colDef.cellEditorParams && Array.isArray(colDef.cellEditorParams.options)) {
-      return colDef.cellEditorParams.options;
-    }
-    return ["New", "Follow-up", "Qualified", "Closed", "Lost"];
-  }, [options, column, colDef]);
-
-  useGridCellEditor({
-    getValue() {
-      return selectRef.current ? selectRef.current.value : val;
-    },
-    isCancelAfterEnd() {
-      return false;
-    },
-  });
-
-  useImperativeHandle(ref, () => ({
-    getValue() {
-      return selectRef.current ? selectRef.current.value : val;
-    },
-    isCancelAfterEnd() {
-      return false;
-    },
-  }));
-
-  useEffect(() => {
-    if (selectRef.current) {
-      selectRef.current.focus();
-    }
-  }, []);
-
-  const handleChange = (e) => {
-    const newVal = e.target.value;
-    setVal(newVal);
-    if (selectRef.current) {
-      selectRef.current.value = newVal;
-    }
-    // Immediately stop editing so AG Grid triggers handleCellValueChanged
-    if (stopEditing) {
-      stopEditing(false);
-    } else if (api) {
-      api.stopEditing(false);
-    }
-  };
-
-  return (
-    <div
-      className="flex items-center w-full h-full px-1 py-0.5 bg-[#111827] border-2 border-[#3b82f6] rounded-lg shadow-2xl z-50"
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <select
-        ref={selectRef}
-        aria-label="Select Dropdown Option"
-        value={val}
-        onChange={handleChange}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === "Escape") {
-            if (stopEditing) stopEditing(false);
-            else if (api) api.stopEditing(false);
-          }
-        }}
-        className="w-full h-8 px-2.5 bg-[#1f293d] text-[#f9fafb] text-xs font-semibold rounded-md border border-[rgba(255,255,255,0.15)] focus:outline-hidden cursor-pointer"
-      >
-        {availableOptions.map((opt) => (
-          <option key={opt} value={opt} className="bg-[#111827] text-[#f9fafb] py-1.5 px-2">
-            {opt}
-          </option>
-        ))}
-      </select>
+      <div className="w-[190px] bg-[#111827] border border-[var(--border-strong)] rounded-xl shadow-2xl p-1.5 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
+        <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--fg-muted)] border-b border-[var(--border)] flex items-center justify-between">
+          <span>{colDef?.headerName || "Select Option"}</span>
+          <span className="text-[9px] text-[var(--fg-subtle)] font-normal">({availableOptions.length})</span>
+        </div>
+        <div
+          className="max-h-[240px] overflow-y-auto space-y-0.5 custom-scrollbar py-1 overscroll-contain pr-1"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
+          {availableOptions.map((opt) => {
+            const isSelected = opt === val;
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => handleSelectOption(opt)}
+                className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                  isSelected
+                    ? "bg-[var(--surface-hover)] text-[var(--primary)] font-bold border border-[var(--border)]"
+                    : "text-[var(--fg)] hover:bg-[var(--surface-2)] hover:text-[var(--primary)]"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {isStatusCol ? (
+                    <StatusBadge value={opt} />
+                  ) : isPriorityCol ? (
+                    <PriorityBadge value={opt} />
+                  ) : (
+                    <span className="truncate">{opt}</span>
+                  )}
+                </div>
+                {isSelected && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] shrink-0 ml-1" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 });
@@ -357,10 +290,6 @@ function CheckboxCellRenderer({ value, node, colDef }) {
   );
 }
 
-import StatusBadge from "@/components/StatusBadge";
-import PriorityBadge from "@/components/PriorityBadge";
-import { Phone, Mail, Calendar as CalendarIcon, MoreVertical } from "lucide-react";
-
 function StatusCellRenderer({ value }) {
   return <StatusBadge value={value} />;
 }
@@ -373,7 +302,7 @@ function PriorityCellRenderer({ value }) {
 function FollowupCellRenderer({ value }) {
   if (!value) {
     return (
-      <span className="px-2 py-0.5 text-[10px] font-mono rounded text-[var(--fg-muted)] bg-[var(--surface-2)]">
+      <span className="px-2 py-0.5 text-[10px] font-mono rounded text-[var(--fg-muted)] bg-[var(--surface-2)] border border-[var(--border)]">
         No Date
       </span>
     );
@@ -381,40 +310,57 @@ function FollowupCellRenderer({ value }) {
 
   const category = getFollowupCategory(value);
 
-  let badgeStyle = {
-    backgroundColor: "var(--surface-2)",
-    color: "var(--fg-muted)",
+  // Distinct, elegant palette matching the dark luxury CRM theme
+  const categoryConfig = {
+    Today: {
+      color: "#f59e0b",
+      bg: "rgba(245, 158, 11, 0.15)",
+      border: "rgba(245, 158, 11, 0.35)",
+      dot: "#f59e0b",
+    },
+    Overdue: {
+      color: "#ef4444",
+      bg: "rgba(239, 68, 68, 0.15)",
+      border: "rgba(239, 68, 68, 0.35)",
+      dot: "#ef4444",
+    },
+    Tomorrow: {
+      color: "#3b82f6",
+      bg: "rgba(59, 130, 246, 0.15)",
+      border: "rgba(59, 130, 246, 0.35)",
+      dot: "#3b82f6",
+    },
+    Upcoming: {
+      color: "#a855f7",
+      bg: "rgba(168, 85, 247, 0.15)",
+      border: "rgba(168, 85, 247, 0.35)",
+      dot: "#a855f7",
+    },
+    "No Date": {
+      color: "var(--fg-muted)",
+      bg: "var(--surface-2)",
+      border: "var(--border)",
+      dot: "var(--fg-subtle)",
+    },
   };
 
-  if (category === "Today") {
-    badgeStyle = {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-fg)",
-    };
-  } else if (category === "Overdue") {
-    badgeStyle = {
-      backgroundColor: "var(--danger-bg)",
-      color: "var(--danger)",
-    };
-  } else if (category === "Tomorrow" || category === "Upcoming") {
-    badgeStyle = {
-      backgroundColor: "var(--info-bg)",
-      color: "var(--info)",
-    };
-  }
+  const currentTheme = categoryConfig[category] || categoryConfig["No Date"];
 
   return (
     <div className="flex items-center gap-2 font-mono text-xs h-full">
-      <span>{value}</span>
+      <span className="truncate">{value}</span>
       <span
-        className="px-2 py-0.5 text-[10px] font-semibold rounded-full flex items-center gap-1 shrink-0"
-        style={badgeStyle}
+        className="px-2 py-0.5 text-[10px] font-semibold rounded-full flex items-center gap-1.5 shrink-0 border shadow-xs"
+        style={{
+          color: currentTheme.color,
+          backgroundColor: currentTheme.bg,
+          borderColor: currentTheme.border,
+        }}
       >
         <span
-          className="w-1.5 h-1.5 rounded-full"
+          className="w-1.5 h-1.5 rounded-full shrink-0"
           style={{
-            backgroundColor:
-              category === "Today" ? "var(--accent-fg)" : badgeStyle.color,
+            backgroundColor: currentTheme.dot,
           }}
         />
         {category}
@@ -637,6 +583,8 @@ const LeadTable = forwardRef(function LeadTable(
 
         case "date":
           colDef.cellEditor = "DateCellEditor";
+          colDef.cellEditorPopup = true;
+          colDef.cellEditorPopupPosition = "over";
           colDef.filter = "agDateColumnFilter";
           if (isFollowup) {
             colDef.cellRenderer = (params) => (
@@ -652,29 +600,56 @@ const LeadTable = forwardRef(function LeadTable(
           colDef.cellEditorPopup = true;
           colDef.cellEditorPopupPosition = "over";
           colDef.filter = "agDateColumnFilter";
-          colDef.cellRenderer = (params) => (
-            <div className="flex items-center gap-1.5 font-mono text-xs h-full">
-              <span>{params.value || "-"}</span>
-              {params.value && (
-                <Calendar className="w-3.5 h-3.5 text-[var(--fg-muted)] shrink-0" />
-              )}
-            </div>
-          );
+          if (isFollowup) {
+            colDef.cellRenderer = (params) => (
+              <FollowupCellRenderer value={params.value} />
+            );
+          } else {
+            colDef.cellRenderer = (params) => (
+              <div className="flex items-center gap-1.5 font-mono text-xs h-full">
+                <span>{params.value || "-"}</span>
+                {params.value && (
+                  <Calendar className="w-3.5 h-3.5 text-[var(--fg-muted)] shrink-0" />
+                )}
+              </div>
+            );
+          }
           break;
 
         case "dropdown":
-          colDef.cellEditor = "agSelectCellEditor";
+          colDef.cellEditor = "SelectCellEditor";
+          colDef.cellEditorPopup = true;
+          colDef.cellEditorPopupPosition = "over";
           colDef.cellEditorParams = {
             values: column.options && column.options.length ? column.options : ["New", "Follow-up", "Qualified", "Closed", "Lost"],
           };
           colDef.filter = "agTextColumnFilter";
           if (isPriority) {
+            colDef.comparator = (valueA, valueB) => {
+              const order = { High: 1, Medium: 2, Low: 3 };
+              const rankA = order[valueA] || 99;
+              const rankB = order[valueB] || 99;
+              return rankA - rankB;
+            };
             colDef.cellRenderer = (params) => (
-              <PriorityCellRenderer value={params.value} />
+              <div className="flex items-center justify-between w-full h-full cursor-pointer pr-1">
+                <PriorityCellRenderer value={params.value} />
+                <ChevronDown className="w-3 h-3 text-[var(--fg-subtle)] opacity-40 shrink-0" />
+              </div>
             );
           } else if (column.special === "status" || column.id === "status" || column.name.toLowerCase() === "status") {
             colDef.cellRenderer = (params) => (
-              <StatusCellRenderer value={params.value} />
+              <div className="flex items-center justify-between w-full h-full cursor-pointer pr-1">
+                <StatusCellRenderer value={params.value} />
+                <ChevronDown className="w-3 h-3 text-[var(--fg-subtle)] opacity-40 shrink-0" />
+              </div>
+            );
+          } else {
+            colDef.cellRenderer = (params) => (
+              <div className="flex items-center justify-between w-full h-full cursor-pointer pr-1">
+                <span className="truncate">{params.value || "-"}</span>
+                <ChevronDown className="w-3 h-3 text-[var(--fg-subtle)] opacity-40 shrink-0" />
+              </div>
             );
           }
           break;
@@ -748,10 +723,10 @@ const LeadTable = forwardRef(function LeadTable(
                   });
                 }
               }}
-              className="p-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--fg-muted)] hover:text-[var(--orange)] hover:border-[var(--orange)] transition-all"
+              className="p-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--fg-muted)] hover:text-[var(--orange)] hover:border-[var(--orange)] transition-all cursor-pointer"
               title="Schedule Follow-up"
             >
-              <CalendarIcon className="w-3.5 h-3.5" />
+              <Calendar className="w-3.5 h-3.5" />
             </button>
 
             <button
@@ -772,7 +747,7 @@ const LeadTable = forwardRef(function LeadTable(
 
 
     return colDefs;
-  }, [columns, hiddenColumnIds, CustomHeader, onRowDelete]);
+  }, [columns, hiddenColumnIds, CustomHeader, onOpenDrawer]);
 
   const rowData = useMemo(() => {
     return rows.map((row) => ({
@@ -860,7 +835,7 @@ const LeadTable = forwardRef(function LeadTable(
 
   return (
     <div
-      className="ag-theme-alpine w-full rounded-xl border border-[var(--border)] overflow-hidden shadow-2xl relative flex flex-col"
+      className="ag-theme-alpine w-full rounded-xl border border-[var(--border)] overflow-visible shadow-2xl relative flex flex-col"
       style={{
         "--ag-background-color": "#0d131f",
         "--ag-foreground-color": "#f9fafb",
@@ -870,6 +845,7 @@ const LeadTable = forwardRef(function LeadTable(
         "--ag-row-hover-color": "#1a2436",
         "--ag-selected-row-background-color": "#1a2436",
         "--ag-cell-horizontal-border": "solid rgba(255, 255, 255, 0.05)",
+        "--ag-control-panel-background-color": "#111827",
         fontFamily: "var(--font-sans)",
         minHeight: "350px",
       }}
@@ -962,12 +938,29 @@ const LeadTable = forwardRef(function LeadTable(
         components={gridComponents}
         columnDefs={columnDefs}
         rowData={rowData}
+        getRowId={(params) => params.data._rowId}
         getRowStyle={getRowStyle}
         onGridReady={onGridReady}
         onColumnResized={saveGridState}
         onColumnMoved={saveGridState}
         onCellValueChanged={handleCellValueChanged}
         onSelectionChanged={handleSelectionChanged}
+        popupParent={typeof document !== "undefined" ? document.body : undefined}
+        onCellClicked={(params) => {
+          // In responsive/mobile touch devices, ensure single tap triggers editing for editable cells
+          if (
+            params.colDef?.editable &&
+            params.api &&
+            !params.node.isRowPinned?.()
+          ) {
+            params.api.startEditingCell({
+              rowIndex: params.node.rowIndex,
+              colKey: params.column.getId(),
+            });
+          }
+        }}
+        singleClickEdit={true}
+        stopEditingWhenCellsLoseFocus={true}
         rowSelection="multiple"
         suppressRowClickSelection={true}
         animateRows={true}
@@ -977,6 +970,7 @@ const LeadTable = forwardRef(function LeadTable(
         domLayout="autoHeight"
         pagination={false}
         defaultColDef={{
+          singleClickEdit: true,
           resizable: true,
           sortable: true,
           filter: true,

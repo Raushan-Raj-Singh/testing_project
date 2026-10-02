@@ -20,7 +20,22 @@ export async function PATCH(req, { params }) {
 
     const targetCol = table.columns[colIndex];
     const body = await req.json();
-    const { name, options, isFollowup, isPriority } = body;
+    const { name, type, options, isFollowup, isPriority } = body;
+
+    const VALID_TYPES = [
+      "text",
+      "longText",
+      "number",
+      "date",
+      "datetime",
+      "dropdown",
+      "checkbox",
+      "phone",
+    ];
+
+    if (type && VALID_TYPES.includes(type)) {
+      targetCol.type = type;
+    }
 
     if (name && typeof name === "string") {
       const trimmedName = name.trim();
@@ -61,7 +76,7 @@ export async function PATCH(req, { params }) {
     }
 
     // Special flag rules
-    if (targetCol.type === "date" && typeof isFollowup === "boolean") {
+    if ((targetCol.type === "date" || targetCol.type === "datetime") && typeof isFollowup === "boolean") {
       if (isFollowup) {
         table.columns.forEach((c) => {
           if (c.special === "followup") c.special = "normal";
@@ -77,6 +92,11 @@ export async function PATCH(req, { params }) {
         });
         targetCol.special = "priority";
       } else if (targetCol.special === "priority") {
+        targetCol.special = "normal";
+      }
+    } else {
+      // If type changed to something other than date/datetime/dropdown, clear special flags if they were followup/priority
+      if (targetCol.special === "followup" || targetCol.special === "priority") {
         targetCol.special = "normal";
       }
     }

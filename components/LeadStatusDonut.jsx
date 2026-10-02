@@ -3,6 +3,17 @@
 import React, { useMemo } from "react";
 import { PieChart } from "lucide-react";
 
+// Status Colors & Tints Configuration matching reference screenshot
+const STATUS_COLORS = {
+  New: { color: "#3b82f6", bg: "rgba(59, 130, 246, 0.15)" },
+  "Follow-up": { color: "#a855f7", bg: "rgba(168, 85, 247, 0.15)" },
+  Qualified: { color: "#10b981", bg: "rgba(16, 185, 129, 0.15)" },
+  Closed: { color: "#64748b", bg: "rgba(100, 116, 139, 0.15)" },
+  Lost: { color: "#ef4444", bg: "rgba(239, 68, 68, 0.15)" },
+};
+
+const DEFAULT_STATUSES = ["New", "Follow-up", "Qualified", "Closed", "Lost"];
+
 export default function LeadStatusDonut({ rows = [], columns = [] }) {
   const statusCol = useMemo(
     () =>
@@ -15,23 +26,17 @@ export default function LeadStatusDonut({ rows = [], columns = [] }) {
     [columns]
   );
 
-  // Status Colors & Tints Configuration matching reference screenshot
-  const statusColors = {
-    New: { color: "#3b82f6", bg: "rgba(59, 130, 246, 0.15)" },
-    "Follow-up": { color: "#a855f7", bg: "rgba(168, 85, 247, 0.15)" },
-    Qualified: { color: "#10b981", bg: "rgba(16, 185, 129, 0.15)" },
-    Closed: { color: "#64748b", bg: "rgba(100, 116, 139, 0.15)" },
-    Lost: { color: "#ef4444", bg: "rgba(239, 68, 68, 0.15)" },
-  };
-
-  const defaultStatuses = ["New", "Follow-up", "Qualified", "Closed", "Lost"];
+  // SVG Donut calculations
+  const radius = 55;
+  const strokeWidth = 14;
+  const circumference = 2 * Math.PI * radius;
 
   // Dynamically aggregate counts per status from MongoDB rows
   const { statusData, totalLeads } = useMemo(() => {
     const counts = {};
     const availableStatuses = statusCol?.options?.length
       ? statusCol.options
-      : defaultStatuses;
+      : DEFAULT_STATUSES;
 
     availableStatuses.forEach((st) => (counts[st] = 0));
 
@@ -48,22 +53,18 @@ export default function LeadStatusDonut({ rows = [], columns = [] }) {
       }
     });
 
+    let cumulative = 0;
     const items = Object.keys(counts).map((st) => {
       const count = counts[st];
       const percent = total > 0 ? Math.round((count / total) * 100) : 0;
-      const theme = statusColors[st] || { color: "#9ca3af", bg: "rgba(156,163,175,0.15)" };
-      return { name: st, count, percent, color: theme.color };
+      const theme = STATUS_COLORS[st] || { color: "#9ca3af", bg: "rgba(156,163,175,0.15)" };
+      const offset = -((cumulative / 100) * circumference);
+      cumulative += percent;
+      return { name: st, count, percent, color: theme.color, offset };
     });
 
     return { statusData: items, totalLeads: rows.length };
-  }, [rows, statusCol]);
-
-  // SVG Donut calculations
-  const radius = 55;
-  const strokeWidth = 14;
-  const circumference = 2 * Math.PI * radius;
-
-  let accumulatedPercent = 0;
+  }, [rows, statusCol, circumference]);
 
   return (
     <div className="glass-panel p-4.5 flex flex-col justify-between shadow-lg h-full">
@@ -94,8 +95,6 @@ export default function LeadStatusDonut({ rows = [], columns = [] }) {
             {statusData.map((item, idx) => {
               if (item.percent === 0) return null;
               const strokeDasharray = `${(item.percent / 100) * circumference} ${circumference}`;
-              const strokeDashoffset = -((accumulatedPercent / 100) * circumference);
-              accumulatedPercent += item.percent;
 
               return (
                 <circle
@@ -107,7 +106,7 @@ export default function LeadStatusDonut({ rows = [], columns = [] }) {
                   stroke={item.color}
                   strokeWidth={strokeWidth}
                   strokeDasharray={strokeDasharray}
-                  strokeDashoffset={strokeDashoffset}
+                  strokeDashoffset={item.offset}
                   strokeLinecap="round"
                   className="transition-all duration-500 hover:opacity-85 cursor-pointer"
                 />

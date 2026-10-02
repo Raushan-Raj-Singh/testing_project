@@ -89,7 +89,7 @@ export default function Toolbar({
     followupFilter !== "ALL";
 
   return (
-    <div className="flex flex-col gap-2 my-1">
+    <div className="flex flex-col gap-2 my-1 relative z-30">
       {/* Bulk Action Bar */}
       {selectedCount > 0 && (
         <div className="flex items-center justify-between px-4 py-2 rounded-xl glass-panel border border-[var(--primary)] shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
@@ -137,7 +137,7 @@ export default function Toolbar({
       )}
 
       {/* Main Glass Pill Toolbar */}
-      <div className="glass-panel p-2.5 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+      <div className="glass-panel p-2.5 flex flex-wrap items-center justify-between gap-3 shadow-lg relative z-30">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[220px] max-w-sm">
@@ -235,20 +235,21 @@ export default function Toolbar({
             </button>
 
             {isColMenuOpen && (
-              <div className="absolute left-0 mt-2 z-50 w-60 rounded-xl glass-panel shadow-2xl p-3 flex flex-col gap-2 animate-in fade-in duration-150">
+              <div className="absolute left-0 top-full mt-1.5 z-[100] w-64 rounded-xl bg-[#111827] border border-[var(--border-strong)] shadow-2xl p-3 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-100">
                 <div className="flex items-center justify-between border-b pb-2 border-[var(--border)]">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--fg-muted)]">
                     Visible Columns
                   </span>
                   <button
+                    type="button"
                     onClick={onShowAllColumns}
-                    className="text-[11px] font-semibold text-[var(--primary)] hover:underline focus:outline-hidden"
+                    className="text-[11px] font-semibold text-[var(--primary)] hover:underline focus:outline-hidden cursor-pointer"
                   >
                     Show All
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-1 max-h-48 overflow-y-auto pr-1">
+                <div className="flex flex-col gap-1 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
                   {columns.map((col) => {
                     const isVisible = !hiddenColumnIds.includes(col.id);
                     return (
@@ -297,7 +298,7 @@ export default function Toolbar({
             </button>
 
             {isExportMenuOpen && (
-              <div className="absolute right-0 mt-2 z-50 w-52 rounded-xl glass-panel shadow-2xl p-2 flex flex-col gap-1 animate-in fade-in duration-150">
+              <div className="absolute right-0 top-full mt-1.5 z-[100] w-52 rounded-xl bg-[#111827] border border-[var(--border-strong)] shadow-2xl p-2 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
                 <button
                   type="button"
                   onClick={() => {

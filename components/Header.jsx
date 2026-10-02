@@ -81,11 +81,11 @@ export default function Header({ activeView = "table", onViewChange }) {
               <div className="py-2 space-y-2 text-xs text-[var(--fg-muted)]">
                 <div className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
                   <p className="text-[var(--fg)] font-medium">Overdue Follow-up</p>
-                  <p className="text-[10px]">Lead "Raj" followup is overdue.</p>
+                  <p className="text-[10px]">Lead &quot;Raj&quot; followup is overdue.</p>
                 </div>
                 <div className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
                   <p className="text-[var(--fg)] font-medium">New Lead Assigned</p>
-                  <p className="text-[10px]">Lead "xzc" added to pipeline.</p>
+                  <p className="text-[10px]">Lead &quot;xzc&quot; added to pipeline.</p>
                 </div>
               </div>
             </div>
