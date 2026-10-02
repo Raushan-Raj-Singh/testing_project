@@ -52,8 +52,19 @@ export async function POST(req) {
     let finalOptions = [];
     if (type === "dropdown") {
       finalOptions = (options || [])
-        .map((opt) => (typeof opt === "string" ? opt.trim() : ""))
-        .filter((opt) => opt.length > 0);
+        .map((opt) => {
+          if (typeof opt === "object" && opt !== null) {
+            const label = typeof opt.label === "string" ? opt.label.trim() : "";
+            const color = typeof opt.color === "string" && opt.color.trim() ? opt.color.trim() : "#3b82f6";
+            return label ? { label, color } : null;
+          }
+          if (typeof opt === "string") {
+            const label = opt.trim();
+            return label ? { label, color: "#3b82f6" } : null;
+          }
+          return null;
+        })
+        .filter(Boolean);
 
       if (finalOptions.length === 0) {
         return NextResponse.json(

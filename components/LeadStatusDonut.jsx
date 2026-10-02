@@ -35,7 +35,9 @@ export default function LeadStatusDonut({ rows = [], columns = [] }) {
   const { statusData, totalLeads } = useMemo(() => {
     const counts = {};
     const availableStatuses = statusCol?.options?.length
-      ? statusCol.options
+      ? statusCol.options.map((opt) =>
+          typeof opt === "object" && opt !== null ? opt.label : String(opt)
+        )
       : DEFAULT_STATUSES;
 
     availableStatuses.forEach((st) => (counts[st] = 0));

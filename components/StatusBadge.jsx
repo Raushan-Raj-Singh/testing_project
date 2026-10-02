@@ -2,7 +2,7 @@
 
 import React from "react";
 
-export default function StatusBadge({ value }) {
+export default function StatusBadge({ value, color }) {
   if (!value) return <span className="text-[var(--fg-subtle)] text-xs">—</span>;
 
   const config = {
@@ -37,6 +37,25 @@ export default function StatusBadge({ value }) {
       dot: "#f43f5e",
     },
   };
+
+  // If a custom color is configured for this option, honor it
+  if (color) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full border shadow-xs transition-all"
+        style={{
+          color: "#ffffff",
+          backgroundColor: color,
+          borderColor: "rgba(255, 255, 255, 0.2)",
+        }}
+      >
+        <span
+          className="w-1.5 h-1.5 rounded-full bg-white/70"
+        />
+        {value}
+      </span>
+    );
+  }
 
   const style = config[value] || {
     color: "var(--fg-muted)",

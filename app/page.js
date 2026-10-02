@@ -594,7 +594,11 @@ export default function Home() {
       <LeadDetailsDrawer
         isOpen={!!activeDrawerLead}
         onClose={() => setActiveDrawerLead(null)}
-        leadRow={activeDrawerLead}
+        leadRow={
+          activeDrawerLead
+            ? rows.find((r) => r._id === (activeDrawerLead._rowId || activeDrawerLead._id)) || activeDrawerLead
+            : null
+        }
         columns={table?.columns || []}
         onSaveLead={handleSaveDrawerLead}
       />

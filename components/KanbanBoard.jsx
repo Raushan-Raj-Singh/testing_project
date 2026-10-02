@@ -33,7 +33,9 @@ export default function KanbanBoard({
   const statusCategories = useMemo(
     () =>
       statusCol?.options?.length
-        ? statusCol.options
+        ? statusCol.options.map((opt) =>
+            typeof opt === "object" && opt !== null ? opt.label : String(opt)
+          )
         : ["New", "Follow-up", "Qualified", "Closed", "Lost"],
     [statusCol]
   );
@@ -62,6 +64,9 @@ export default function KanbanBoard({
       <div className="flex gap-4 min-w-[1100px]">
         {statusCategories.map((st) => {
           const leadsInCol = columnsData[st] || [];
+          const optColor = statusCol?.options
+            ?.map((opt) => (typeof opt === "object" && opt !== null ? opt : { label: String(opt), color: undefined }))
+            ?.find((opt) => opt.label.toLowerCase() === String(st || "").toLowerCase())?.color;
 
           return (
             <div
@@ -71,7 +76,7 @@ export default function KanbanBoard({
               {/* Kanban Column Header */}
               <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
                 <div className="flex items-center gap-2">
-                  <StatusBadge value={st} />
+                  <StatusBadge value={st} color={optColor} />
                 </div>
                 <span className="font-mono text-xs font-bold text-[var(--fg-muted)] px-2 py-0.5 rounded-md bg-[var(--surface-2)]">
                   {leadsInCol.length}

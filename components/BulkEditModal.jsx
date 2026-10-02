@@ -37,7 +37,9 @@ export default function BulkEditModal({
       if (colObj.type === "checkbox") {
         setValue(false);
       } else if (colObj.type === "dropdown" && colObj.options?.length) {
-        setValue(colObj.options[0]);
+        const firstOpt = colObj.options[0];
+        const label = typeof firstOpt === "object" && firstOpt !== null ? firstOpt.label : String(firstOpt);
+        setValue(label || "");
       } else {
         setValue("");
       }
@@ -213,11 +215,14 @@ export default function BulkEditModal({
                 onChange={(e) => setValue(e.target.value)}
                 className="px-3 py-2 text-sm rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--accent)] transition-all cursor-pointer"
               >
-                {targetCol.options?.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
+                {targetCol.options?.map((opt, idx) => {
+                  const optLabel = typeof opt === "object" && opt !== null ? opt.label : String(opt);
+                  return (
+                    <option key={`${optLabel}-${idx}`} value={optLabel}>
+                      {optLabel}
+                    </option>
+                  );
+                })}
               </select>
             ) : targetCol.type === "checkbox" ? (
               <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]">

@@ -62,8 +62,19 @@ export async function PATCH(req, { params }) {
 
     if (targetCol.type === "dropdown" && Array.isArray(options)) {
       const finalOptions = options
-        .map((opt) => (typeof opt === "string" ? opt.trim() : ""))
-        .filter((opt) => opt.length > 0);
+        .map((opt) => {
+          if (typeof opt === "object" && opt !== null) {
+            const label = typeof opt.label === "string" ? opt.label.trim() : "";
+            const color = typeof opt.color === "string" && opt.color.trim() ? opt.color.trim() : "#3b82f6";
+            return label ? { label, color } : null;
+          }
+          if (typeof opt === "string") {
+            const label = opt.trim();
+            return label ? { label, color: "#3b82f6" } : null;
+          }
+          return null;
+        })
+        .filter(Boolean);
 
       if (finalOptions.length === 0) {
         return NextResponse.json(
@@ -73,6 +84,7 @@ export async function PATCH(req, { params }) {
       }
 
       targetCol.options = finalOptions;
+      table.markModified("columns");
     }
 
     // Special flag rules
@@ -107,7 +119,7 @@ export async function PATCH(req, { params }) {
   } catch (error) {
     console.error("PATCH /api/table/column/[columnId] error:", error);
     return NextResponse.json(
-      { success: false, message: "Failed to update column." },
+      { success: false, message: error?.message || "Failed to update column." },
       { status: 500 }
     );
   }

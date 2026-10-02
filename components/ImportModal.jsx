@@ -182,11 +182,13 @@ export default function ImportModal({
               }
               case "dropdown": {
                 if (colDef.options?.length) {
-                  const matchedOpt = colDef.options.find(
-                    (opt) => opt.toLowerCase() === rawVal.toLowerCase()
-                  );
+                  const matchedOpt = colDef.options.find((opt) => {
+                    const label = typeof opt === "object" && opt !== null ? opt.label : String(opt);
+                    return label.toLowerCase() === rawVal.toLowerCase();
+                  });
                   if (matchedOpt) {
-                    rowData[colDef.id] = matchedOpt;
+                    const finalLabel = typeof matchedOpt === "object" && matchedOpt !== null ? matchedOpt.label : String(matchedOpt);
+                    rowData[colDef.id] = finalLabel;
                   } else {
                     rowErrors.push(
                       `Column "${colDef.name}": "${rawVal}" is not a configured dropdown option.`

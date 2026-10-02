@@ -19,7 +19,7 @@ const ColumnSchema = new mongoose.Schema(
       ],
       default: "text",
     },
-    options: { type: [String], default: [] },
+    options: { type: [mongoose.Schema.Types.Mixed], default: [] },
     special: {
       type: String,
       enum: ["normal", "followup", "priority", "status"],
@@ -36,5 +36,9 @@ const TableSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+if (process.env.NODE_ENV !== "production") {
+  delete mongoose.models.Table;
+}
 
 export default mongoose.models.Table || mongoose.model("Table", TableSchema);

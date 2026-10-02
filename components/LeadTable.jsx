@@ -21,6 +21,11 @@ import { Edit2, Trash2, Calendar, Plus, RotateCcw, AlertTriangle, FileX, Loader2
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 import ThemeDatePicker from "@/components/ThemeDatePicker";
+import {
+  normalizeOption,
+  getContrastTextColor,
+  getOptionLabel,
+} from "@/utils/dropdownOptions";
 
 /**
  * Custom Date Cell Editor - Opens Theme-Matching Calendar Picker
@@ -158,8 +163,8 @@ const SelectCellEditor = forwardRef(({ value, options = [], colDef, column, stop
   const valRef = useRef(value || "");
   const containerRef = useRef(null);
 
-  // Fallback options list from column schema or defaults
-  const availableOptions = useMemo(() => {
+  // Fallback options list from column schema or defaults, normalized into { label, color }
+  const rawOptionsList = useMemo(() => {
     if (Array.isArray(options) && options.length > 0) return options;
     if (column && Array.isArray(column.options) && column.options.length > 0) return column.options;
     if (colDef && colDef.cellEditorParams && Array.isArray(colDef.cellEditorParams.values)) {
@@ -170,6 +175,10 @@ const SelectCellEditor = forwardRef(({ value, options = [], colDef, column, stop
     }
     return ["New", "Follow-up", "Qualified", "Closed", "Lost"];
   }, [options, column, colDef]);
+
+  const normalizedOptions = useMemo(() => {
+    return rawOptionsList.map((opt, i) => normalizeOption(opt, i));
+  }, [rawOptionsList]);
 
   const isPriorityCol = colDef?.field === "priority" || column?.colId === "priority" || column?.special === "priority";
   const isStatusCol = colDef?.field === "status" || column?.colId === "status" || column?.special === "status" || colDef?.headerName?.toLowerCase() === "status";
@@ -192,19 +201,19 @@ const SelectCellEditor = forwardRef(({ value, options = [], colDef, column, stop
     },
   }));
 
-  const handleSelectOption = (opt) => {
-    valRef.current = opt;
-    setVal(opt);
+  const handleSelectOption = (optLabel) => {
+    valRef.current = optLabel;
+    setVal(optLabel);
 
     // 1. Notify AG Grid cell editor pipeline
     if (onValueChange) {
-      onValueChange(opt);
+      onValueChange(optLabel);
     }
 
     // 2. Directly write to row node to guarantee AG Grid data and table sync
     const field = colDef?.field || (column && column.getId ? column.getId() : undefined);
     if (node && field && node.setDataValue) {
-      node.setDataValue(field, opt);
+      node.setDataValue(field, optLabel);
     }
 
     // 3. Stop editing cleanly
@@ -224,23 +233,26 @@ const SelectCellEditor = forwardRef(({ value, options = [], colDef, column, stop
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="w-[190px] bg-[#111827] border border-[var(--border-strong)] rounded-xl shadow-2xl p-1.5 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
+      <div className="min-w-[190px] max-w-[240px] bg-[#111827] border border-[var(--border-strong)] rounded-xl shadow-2xl p-1.5 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
         <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--fg-muted)] border-b border-[var(--border)] flex items-center justify-between">
           <span>{colDef?.headerName || "Select Option"}</span>
-          <span className="text-[9px] text-[var(--fg-subtle)] font-normal">({availableOptions.length})</span>
+          <span className="text-[9px] text-[var(--fg-subtle)] font-normal">({normalizedOptions.length})</span>
         </div>
         <div
           className="max-h-[240px] overflow-y-auto space-y-0.5 custom-scrollbar py-1 overscroll-contain pr-1"
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
         >
-          {availableOptions.map((opt) => {
-            const isSelected = opt === val;
+          {normalizedOptions.map((optObj, idx) => {
+            const optLabel = optObj.label;
+            const isSelected = optLabel === val;
+            const optTextColor = getContrastTextColor(optObj.color);
+
             return (
               <button
-                key={opt}
+                key={`${optLabel}-${idx}`}
                 type="button"
-                onClick={() => handleSelectOption(opt)}
+                onClick={() => handleSelectOption(optLabel)}
                 className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
                   isSelected
                     ? "bg-[var(--surface-hover)] text-[var(--primary)] font-bold border border-[var(--border)]"
@@ -249,11 +261,20 @@ const SelectCellEditor = forwardRef(({ value, options = [], colDef, column, stop
               >
                 <div className="flex items-center gap-2">
                   {isStatusCol ? (
-                    <StatusBadge value={opt} />
+                    <StatusBadge value={optLabel} color={optObj.color} />
                   ) : isPriorityCol ? (
-                    <PriorityBadge value={opt} />
+                    <PriorityBadge value={optLabel} />
                   ) : (
-                    <span className="truncate">{opt}</span>
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shadow-xs border"
+                      style={{
+                        backgroundColor: optObj.color,
+                        borderColor: "rgba(255, 255, 255, 0.2)",
+                        color: optTextColor,
+                      }}
+                    >
+                      {optLabel}
+                    </span>
                   )}
                 </div>
                 {isSelected && (
@@ -461,24 +482,28 @@ const LeadTable = forwardRef(function LeadTable(
             </span>
             {isFollowup && (
               <span
-                className="px-1.5 py-0.2 text-[9px] font-bold rounded uppercase tracking-wider"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-semibold rounded-md border tracking-wide uppercase transition-all shadow-xs"
                 style={{
-                  backgroundColor: "var(--warning-bg)",
-                  color: "var(--accent)",
+                  backgroundColor: "rgba(245, 158, 11, 0.12)",
+                  borderColor: "rgba(245, 158, 11, 0.28)",
+                  color: "#fbbf24",
                 }}
               >
-                FOLLOW-UP
+                <span className="w-1 h-1 rounded-full bg-[#f59e0b] shrink-0" />
+                Follow-up
               </span>
             )}
             {isPriority && (
               <span
-                className="px-1.5 py-0.2 text-[9px] font-bold rounded uppercase tracking-wider"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-semibold rounded-md border tracking-wide uppercase transition-all shadow-xs"
                 style={{
-                  backgroundColor: "var(--warning-bg)",
-                  color: "var(--accent)",
+                  backgroundColor: "rgba(239, 68, 68, 0.12)",
+                  borderColor: "rgba(239, 68, 68, 0.28)",
+                  color: "#f87171",
                 }}
               >
-                PRIORITY
+                <span className="w-1 h-1 rounded-full bg-[#ef4444] shrink-0" />
+                Priority
               </span>
             )}
           </div>
@@ -638,19 +663,60 @@ const LeadTable = forwardRef(function LeadTable(
               </div>
             );
           } else if (column.special === "status" || column.id === "status" || column.name.toLowerCase() === "status") {
-            colDef.cellRenderer = (params) => (
-              <div className="flex items-center justify-between w-full h-full cursor-pointer pr-1">
-                <StatusCellRenderer value={params.value} />
-                <ChevronDown className="w-3 h-3 text-[var(--fg-subtle)] opacity-40 shrink-0" />
-              </div>
-            );
+            const statusOptionsMap = new Map();
+            (column.options || []).forEach((opt, idx) => {
+              const norm = normalizeOption(opt, idx);
+              statusOptionsMap.set(norm.label.toLowerCase(), norm);
+            });
+
+            colDef.cellRenderer = (params) => {
+              const matched = statusOptionsMap.get(String(params.value || "").toLowerCase());
+              return (
+                <div className="flex items-center justify-between w-full h-full cursor-pointer pr-1">
+                  <StatusBadge value={params.value} color={matched?.color} />
+                  <ChevronDown className="w-3 h-3 text-[var(--fg-subtle)] opacity-40 shrink-0" />
+                </div>
+              );
+            };
           } else {
-            colDef.cellRenderer = (params) => (
-              <div className="flex items-center justify-between w-full h-full cursor-pointer pr-1">
-                <span className="truncate">{params.value || "-"}</span>
-                <ChevronDown className="w-3 h-3 text-[var(--fg-subtle)] opacity-40 shrink-0" />
-              </div>
-            );
+            // Build options map for quick lookup of color
+            const optionsMap = new Map();
+            (column.options || []).forEach((opt, idx) => {
+              const norm = normalizeOption(opt, idx);
+              optionsMap.set(norm.label.toLowerCase(), norm);
+            });
+
+            colDef.cellRenderer = (params) => {
+              const val = params.value;
+              if (!val) {
+                return (
+                  <div className="flex items-center justify-between w-full h-full cursor-pointer pr-1">
+                    <span className="text-[var(--fg-subtle)] text-xs">—</span>
+                    <ChevronDown className="w-3 h-3 text-[var(--fg-subtle)] opacity-40 shrink-0" />
+                  </div>
+                );
+              }
+
+              const matched = optionsMap.get(String(val).toLowerCase());
+              const chipColor = matched ? matched.color : "#3b82f6";
+              const textColor = getContrastTextColor(chipColor);
+
+              return (
+                <div className="flex items-center justify-between w-full h-full cursor-pointer pr-1">
+                  <span
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold shadow-xs border truncate max-w-[130px]"
+                    style={{
+                      backgroundColor: chipColor,
+                      borderColor: "rgba(255, 255, 255, 0.2)",
+                      color: textColor,
+                    }}
+                  >
+                    {val}
+                  </span>
+                  <ChevronDown className="w-3 h-3 text-[var(--fg-subtle)] opacity-40 shrink-0 ml-1" />
+                </div>
+              );
+            };
           }
           break;
 
@@ -843,7 +909,7 @@ const LeadTable = forwardRef(function LeadTable(
         "--ag-header-foreground-color": "#9ca3af",
         "--ag-border-color": "rgba(255, 255, 255, 0.08)",
         "--ag-row-hover-color": "#1a2436",
-        "--ag-selected-row-background-color": "#1a2436",
+        "--ag-selected-row-background-color": "#172554",
         "--ag-cell-horizontal-border": "solid rgba(255, 255, 255, 0.05)",
         "--ag-control-panel-background-color": "#111827",
         fontFamily: "var(--font-sans)",

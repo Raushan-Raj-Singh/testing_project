@@ -171,11 +171,14 @@ export default function Toolbar({
             className="px-3 py-1.5 text-xs rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--primary)] text-[var(--fg)] disabled:opacity-50 cursor-pointer font-medium"
           >
             <option value="ALL">Status: All</option>
-            {statusCol?.options?.map((opt) => (
-              <option key={opt} value={opt}>
-                Status: {opt}
-              </option>
-            ))}
+            {statusCol?.options?.map((opt, idx) => {
+              const label = typeof opt === "object" && opt !== null ? opt.label : String(opt);
+              return (
+                <option key={`${label}-${idx}`} value={label}>
+                  Status: {label}
+                </option>
+              );
+            })}
           </select>
 
           {/* Priority Filter Dropdown */}
@@ -187,11 +190,14 @@ export default function Toolbar({
             className="px-3 py-1.5 text-xs rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--primary)] text-[var(--fg)] disabled:opacity-50 cursor-pointer font-medium"
           >
             <option value="ALL">Priority: All</option>
-            {priorityCol?.options?.map((opt) => (
-              <option key={opt} value={opt}>
-                Priority: {opt}
-              </option>
-            ))}
+            {priorityCol?.options?.map((opt, idx) => {
+              const label = typeof opt === "object" && opt !== null ? opt.label : String(opt);
+              return (
+                <option key={`${label}-${idx}`} value={label}>
+                  Priority: {label}
+                </option>
+              );
+            })}
           </select>
 
           {/* Follow-up Filter Dropdown */}
