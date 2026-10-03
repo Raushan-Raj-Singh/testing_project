@@ -75,7 +75,7 @@ export default function LoginPage() {
           <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--fg)] tracking-tight">
             Welcome Back
           </h1>
-          <p className="text-xs text-[var(--fg-subtle)] font-medium">
+          <p className="text-xs text-white font-medium">
             Sign in to access your Lead Management workspace
           </p>
         </div>
@@ -100,7 +100,7 @@ export default function LoginPage() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
-                placeholder="rajveer@example.com"
+                placeholder="rj@example.com"
                 className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--primary)] text-[var(--fg)] transition-all min-h-[44px]"
               />
             </div>
@@ -108,9 +108,17 @@ export default function LoginPage() {
 
           {/* Password */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-[var(--fg-muted)]">
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-[var(--fg-muted)]">
+                Password
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-xs font-semibold text-[var(--primary)] hover:underline cursor-pointer"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <div className="relative">
               <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--fg-subtle)] pointer-events-none" />
               <input
@@ -151,7 +159,7 @@ export default function LoginPage() {
         </form>
 
         {/* Footer Link */}
-        <div className="mt-6 pt-4 border-t border-[var(--border)]/60 text-center text-xs text-[var(--fg-subtle)]">
+        <div className="mt-6 pt-4 border-t border-[var(--border)]/60 text-center text-xs text-white">
           Don&apos;t have an account?{" "}
           <Link
             href="/signup"

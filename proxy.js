@@ -34,7 +34,11 @@ export async function proxy(req) {
     }
   }
 
-  const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password";
   const isAuthApi = pathname.startsWith("/api/auth");
 
   // Allow auth APIs without redirect
@@ -42,7 +46,7 @@ export async function proxy(req) {
     return NextResponse.next();
   }
 
-  // If visiting login/signup while already authenticated, redirect to CRM dashboard
+  // If visiting auth pages while already authenticated, redirect to CRM dashboard
   if (isAuthPage && isValidSession) {
     return NextResponse.redirect(new URL("/", req.url));
   }

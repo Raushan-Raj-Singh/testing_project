@@ -86,7 +86,7 @@ export default function KanbanBoard({
               {/* Lead Cards List */}
               <div className="flex flex-col gap-3 max-h-[580px] overflow-y-auto pr-1">
                 {leadsInCol.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-[var(--fg-subtle)] font-medium border border-dashed border-[var(--border)] rounded-xl">
+                  <div className="p-6 text-center text-xs text-white font-medium border border-dashed border-[var(--border)] rounded-xl">
                     No leads in {st}
                   </div>
                 ) : (

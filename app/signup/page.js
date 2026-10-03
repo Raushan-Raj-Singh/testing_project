@@ -91,10 +91,10 @@ export default function SignupPage() {
           <div className="p-3 rounded-2xl bg-[var(--primary)]/15 border border-[var(--primary)]/30 text-[var(--primary)] shadow-lg">
             <ShieldCheck className="w-8 h-8" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--fg)] tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
             Lead Management CRM
           </h1>
-          <p className="text-xs text-[var(--fg-subtle)] font-medium">
+          <p className="text-xs text-white font-medium">
             Create your account to access your workspace
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function SignupPage() {
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleChange("name", e.target.value)}
-                placeholder="e.g. Rajveer Singh"
+                placeholder="e.g. Rj Singh"
                 className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--primary)] text-[var(--fg)] transition-all min-h-[44px]"
               />
             </div>
@@ -136,7 +136,7 @@ export default function SignupPage() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
-                placeholder="rajveer@example.com"
+                placeholder="rj@example.com"
                 className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--primary)] text-[var(--fg)] transition-all min-h-[44px]"
               />
             </div>
@@ -211,7 +211,7 @@ export default function SignupPage() {
         </form>
 
         {/* Footer Link */}
-        <div className="mt-6 pt-4 border-t border-[var(--border)]/60 text-center text-xs text-[var(--fg-subtle)]">
+        <div className="mt-6 pt-4 border-t border-[var(--border)]/60 text-center text-xs text-white">
           Already have an account?{" "}
           <Link
             href="/login"
