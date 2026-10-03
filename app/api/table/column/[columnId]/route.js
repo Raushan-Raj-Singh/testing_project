@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
-import Table from "@/models/Table";
 import Row from "@/models/Row";
-import { getOrSeedDefaultTable } from "@/lib/seed";
+import { getSessionUser } from "@/lib/auth";
+import { getUserTable } from "@/lib/seed";
 
 export async function PATCH(req, { params }) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
-    const table = await getOrSeedDefaultTable();
+    const table = await getUserTable(user.id);
     const { columnId } = await params;
 
     const colIndex = table.columns.findIndex((c) => c.id === columnId);
@@ -20,7 +28,7 @@ export async function PATCH(req, { params }) {
 
     const targetCol = table.columns[colIndex];
     const body = await req.json();
-    const { name, type, options, isFollowup, isPriority } = body;
+    const { name, type, options, isFollowup, isPriority } = body || {};
 
     const VALID_TYPES = [
       "text",
@@ -107,7 +115,6 @@ export async function PATCH(req, { params }) {
         targetCol.special = "normal";
       }
     } else {
-      // If type changed to something other than date/datetime/dropdown, clear special flags if they were followup/priority
       if (targetCol.special === "followup" || targetCol.special === "priority") {
         targetCol.special = "normal";
       }
@@ -115,7 +122,8 @@ export async function PATCH(req, { params }) {
 
     await table.save();
 
-    return NextResponse.json({ success: true, data: table }, { status: 200 });
+    const tableData = JSON.parse(JSON.stringify(table));
+    return NextResponse.json({ success: true, data: tableData }, { status: 200 });
   } catch (error) {
     console.error("PATCH /api/table/column/[columnId] error:", error);
     return NextResponse.json(
@@ -127,8 +135,16 @@ export async function PATCH(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
-    const table = await getOrSeedDefaultTable();
+    const table = await getUserTable(user.id);
     const { columnId } = await params;
 
     const colIndex = table.columns.findIndex((c) => c.id === columnId);
@@ -145,18 +161,19 @@ export async function DELETE(req, { params }) {
     table.columns.splice(colIndex, 1);
     await table.save();
 
-    // Unset column key from every Row data object in MongoDB
+    // Unset column key from every Row data object in user's table
     const unsetField = `data.${columnId}`;
     await Row.updateMany(
       { tableId: table._id },
       { $unset: { [unsetField]: "" } }
     );
 
+    const tableData = JSON.parse(JSON.stringify(table));
     return NextResponse.json(
       {
         success: true,
         message: `Column "${removedCol.name}" and its data deleted successfully.`,
-        data: table,
+        data: tableData,
       },
       { status: 200 }
     );

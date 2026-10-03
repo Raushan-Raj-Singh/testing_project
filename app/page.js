@@ -21,13 +21,17 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { getFollowupCategory, sortRowsByFollowupAndPriority } from "@/utils/followup";
 import { exportToCSV } from "@/utils/csvExport";
 
+import { useRouter } from "next/navigation";
+
 export default function Home() {
+  const router = useRouter();
 
   const [table, setTable] = useState(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Navigation & View Mode State
   const [activeView, setActiveView] = useState("table");
@@ -62,6 +66,16 @@ export default function Home() {
     setTimeout(() => setToastMessage(null), 3500);
   }, []);
 
+  const handleLogout = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh();
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  }, [router]);
+
   const handleSaveDrawerLead = useCallback(
     async (rowId, updatedFields) => {
       const res = await fetch(`/api/rows/${rowId}`, {
@@ -84,8 +98,6 @@ export default function Home() {
     },
     [table, showToast]
   );
-
-
 
   const fetchData = useCallback(async () => {
     try {
@@ -124,6 +136,20 @@ export default function Home() {
       try {
         setLoading(true);
         setError(null);
+
+        // Verify session first
+        const meRes = await fetch("/api/auth/me");
+        const meData = await meRes.json();
+
+        if (ignore) return;
+
+        if (!meData.success || !meData.user) {
+          router.push("/login");
+          return;
+        }
+
+        setCurrentUser(meData.user);
+
         const [tableRes, rowsRes] = await Promise.all([
           fetch("/api/table"),
           fetch("/api/rows"),
@@ -161,7 +187,7 @@ export default function Home() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [router]);
 
   const filteredRows = useMemo(() => {
     if (!rows || !rows.length) return [];
@@ -375,7 +401,12 @@ export default function Home() {
   const handleAddRow = async (rowDataOverride) => {
     try {
       let initialData = {};
-      if (rowDataOverride && typeof rowDataOverride === "object" && !Array.isArray(rowDataOverride)) {
+      const isEvent =
+        rowDataOverride &&
+        typeof rowDataOverride === "object" &&
+        ("nativeEvent" in rowDataOverride || "_reactName" in rowDataOverride || typeof rowDataOverride.preventDefault === "function");
+
+      if (rowDataOverride && typeof rowDataOverride === "object" && !Array.isArray(rowDataOverride) && !isEvent) {
         initialData = rowDataOverride;
       } else {
         (table?.columns || []).forEach((col) => {
@@ -515,7 +546,12 @@ export default function Home() {
       )}
 
       {/* Top Header Bar */}
-      <Header activeView={activeView} onViewChange={setActiveView} />
+      <Header
+        activeView={activeView}
+        onViewChange={setActiveView}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
 
 
       {/* Main Layout Container */}

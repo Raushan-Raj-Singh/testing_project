@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Table from "@/models/Table";
-import { getOrSeedDefaultTable } from "@/lib/seed";
+import { getSessionUser } from "@/lib/auth";
+import { getUserTable } from "@/lib/seed";
 
-export async function GET() {
+export async function GET(req) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required to access CRM table." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
-    const table = await getOrSeedDefaultTable();
+    const table = await getUserTable(user.id);
     const tableData = JSON.parse(JSON.stringify(table));
     return NextResponse.json({ success: true, data: tableData }, { status: 200 });
   } catch (error) {
@@ -20,19 +29,28 @@ export async function GET() {
 
 export async function POST(req) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
     const body = await req.json();
-    const { name, columns } = body;
+    const { name, columns } = body || {};
 
-    const existing = await Table.findOne();
+    const existing = await Table.findOne({ userId: user.id });
     if (existing) {
       return NextResponse.json(
-        { success: false, message: "Table already exists." },
+        { success: false, message: "User table already exists." },
         { status: 409 }
       );
     }
 
     const newTable = await Table.create({
+      userId: user.id,
       name: name || "Lead Management",
       columns: columns || [],
     });
@@ -50,11 +68,19 @@ export async function POST(req) {
 
 export async function PATCH(req) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
     const body = await req.json();
-    const { name } = body;
+    const { name } = body || {};
 
-    const table = await Table.findOne();
+    const table = await getUserTable(user.id);
     if (!table) {
       return NextResponse.json(
         { success: false, message: "Table not found." },

@@ -31,6 +31,12 @@ const ColumnSchema = new mongoose.Schema(
 
 const TableSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+      index: true,
+    },
     name: { type: String, required: true, default: "Lead Management" },
     columns: { type: [ColumnSchema], default: [] },
   },

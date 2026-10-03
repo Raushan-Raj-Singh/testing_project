@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Row from "@/models/Row";
-import { getOrSeedDefaultTable } from "@/lib/seed";
+import { getSessionUser } from "@/lib/auth";
+import { getUserTable } from "@/lib/seed";
 import { sortRowsByFollowupAndPriority } from "@/utils/followup";
 
-export async function GET() {
+export async function GET(req) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required to fetch leads." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
-    const table = await getOrSeedDefaultTable();
+    const table = await getUserTable(user.id);
     const rawRows = await Row.find({ tableId: table._id }).lean();
 
     const cleanRows = JSON.parse(JSON.stringify(rawRows));
@@ -28,8 +37,16 @@ export async function GET() {
 
 export async function POST(req) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required to add leads." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
-    const table = await getOrSeedDefaultTable();
+    const table = await getUserTable(user.id);
 
     let initialData = {};
     try {

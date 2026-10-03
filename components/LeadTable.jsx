@@ -969,7 +969,7 @@ const LeadTable = forwardRef(function LeadTable(
               </p>
               {onAddRow && (
                 <button
-                  onClick={onAddRow}
+                  onClick={() => onAddRow()}
                   className="mt-2 px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all shadow-xs focus:outline-hidden bg-[var(--primary)] text-[#0b0f17]"
                 >
                   <Plus className="w-3.5 h-3.5" />

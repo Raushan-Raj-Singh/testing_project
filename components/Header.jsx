@@ -1,44 +1,75 @@
 "use client";
 
-import React, { useState } from "react";
-import { Users, Bell, Settings, ChevronDown } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Users, Bell, Settings, ChevronDown, LogOut, User as UserIcon } from "lucide-react";
 
-export default function Header({ activeView = "table", onViewChange }) {
+export default function Header({
+  activeView = "table",
+  onViewChange,
+  currentUser = null,
+  onLogout,
+}) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
+  const userMenuRef = useRef(null);
+  const notifMenuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+      if (notifMenuRef.current && !notifMenuRef.current.contains(event.target)) {
+        setIsNotificationOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const userName = currentUser?.name || "User Account";
+  const userEmail = currentUser?.email || "user@example.com";
+  const initials = userName
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "CRM";
+
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[var(--border)] mb-4">
+    <header className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-[var(--border)] mb-4 relative z-40 max-w-full min-w-0">
       {/* Left: Branding & Subtitle */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.3)] flex items-center justify-center text-[var(--orange)] shadow-xs">
-          <Users className="w-5 h-5" />
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 max-w-full">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.3)] flex items-center justify-center text-[var(--orange)] shadow-xs shrink-0">
+          <Users className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
 
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[var(--fg)]">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-[var(--fg)] truncate">
               Lead Management
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-mono font-semibold rounded-full bg-[rgba(16,185,129,0.12)] text-[var(--green)] border border-[rgba(16,185,129,0.25)]">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[9px] sm:text-[10px] font-mono font-semibold rounded-full bg-[rgba(16,185,129,0.12)] text-[var(--green)] border border-[rgba(16,185,129,0.25)] shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse" />
-              MongoDB • Live Data
+              Authenticated • Live CRM
             </span>
           </div>
-          <p className="text-xs text-[var(--fg-muted)] mt-0.5">
+          <p className="text-[11px] sm:text-xs text-[var(--fg-muted)] mt-0.5 truncate">
             Track, manage and follow up with your leads
           </p>
         </div>
       </div>
 
-      {/* Right: Notification, Settings, User Profile */}
-      <div className="flex items-center gap-3">
+      {/* Right: View Switcher, Notification, User Profile */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto sm:ml-0">
         {/* View Switcher toggle option if passed */}
         {onViewChange && (
-          <div className="hidden sm:flex items-center p-1 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] mr-2">
+          <div className="hidden sm:flex items-center p-1 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] mr-1">
             <button
               onClick={() => onViewChange("table")}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[34px] cursor-pointer ${
                 activeView === "table"
                   ? "bg-[var(--primary)] text-[#0b0f17] shadow-xs"
                   : "text-[var(--fg-muted)] hover:text-[var(--fg)]"
@@ -48,7 +79,7 @@ export default function Header({ activeView = "table", onViewChange }) {
             </button>
             <button
               onClick={() => onViewChange("kanban")}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[34px] cursor-pointer ${
                 activeView === "kanban"
                   ? "bg-[var(--primary)] text-[#0b0f17] shadow-xs"
                   : "text-[var(--fg-muted)] hover:text-[var(--fg)]"
@@ -59,70 +90,43 @@ export default function Header({ activeView = "table", onViewChange }) {
           </div>
         )}
 
-        {/* Notifications Button */}
-        <div className="relative">
+        {/* User Profile Avatar & Account Dropdown */}
+        <div className="relative" ref={userMenuRef}>
           <button
-            onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-            aria-label="Notifications"
-            className="relative p-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--fg-muted)] hover:text-[var(--fg)] hover:border-[var(--border-strong)] transition-all focus:outline-hidden"
+            onClick={() => setIsUserMenuOpen((prev) => !prev)}
+            aria-label="User Account Menu"
+            className="flex items-center gap-2 p-1.5 pl-2 pr-2.5 sm:pr-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-all focus:outline-hidden min-h-[38px] sm:min-h-[40px] cursor-pointer"
           >
-            <Bell className="w-4 h-4" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--red)] text-white text-[9px] font-bold flex items-center justify-center border-2 border-[var(--bg)]">
-              2
+            <div className="w-7 h-7 rounded-lg bg-[var(--primary)] text-[#0b0f17] text-xs font-extrabold flex items-center justify-center shadow-xs shrink-0">
+              {initials}
+            </div>
+            <span className="text-xs font-bold text-[var(--fg)] hidden md:inline truncate max-w-[120px]">
+              {userName}
             </span>
-          </button>
-
-          {isNotificationOpen && (
-            <div className="absolute right-0 mt-2 w-64 p-3 rounded-xl glass-panel shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-              <div className="text-xs font-bold text-[var(--fg)] pb-2 border-b border-[var(--border)] flex justify-between items-center">
-                Notifications
-                <span className="text-[10px] text-[var(--primary)] font-normal">2 new</span>
-              </div>
-              <div className="py-2 space-y-2 text-xs text-[var(--fg-muted)]">
-                <div className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
-                  <p className="text-[var(--fg)] font-medium">Overdue Follow-up</p>
-                  <p className="text-[10px]">Lead &quot;Raj&quot; followup is overdue.</p>
-                </div>
-                <div className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
-                  <p className="text-[var(--fg)] font-medium">New Lead Assigned</p>
-                  <p className="text-[10px]">Lead &quot;xzc&quot; added to pipeline.</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Settings Icon */}
-        <button
-          aria-label="Settings"
-          className="p-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--fg-muted)] hover:text-[var(--fg)] hover:border-[var(--border-strong)] transition-all focus:outline-hidden"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
-
-        {/* User Profile Avatar Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-all focus:outline-hidden"
-          >
-            <div className="w-7 h-7 rounded-lg bg-[var(--surface-2)] text-[var(--fg)] text-xs font-bold flex items-center justify-center border border-[var(--border)]">
-              RS
-            </div>
-            <ChevronDown className="w-3.5 h-3.5 text-[var(--fg-muted)]" />
+            <ChevronDown className="w-3.5 h-3.5 text-[var(--fg-muted)] shrink-0" />
           </button>
 
           {isUserMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 p-2 rounded-xl glass-panel shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-              <div className="px-2 py-1.5 border-b border-[var(--border)] mb-1">
-                <p className="text-xs font-semibold text-[var(--fg)]">Rajesh Sharma</p>
-                <p className="text-[10px] text-[var(--fg-muted)]">rajesh@company.com</p>
+            <div className="absolute right-0 mt-2 w-60 max-w-[calc(100vw-2rem)] p-2 rounded-xl bg-[#111827] border border-[var(--border-strong)] shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="px-3 py-2 border-b border-[var(--border)] mb-1 min-w-0">
+                <p className="text-xs font-bold text-[var(--fg)] truncate" title={userName}>{userName}</p>
+                <p className="text-[11px] text-[var(--fg-subtle)] truncate font-mono" title={userEmail}>{userEmail}</p>
               </div>
-              <button className="w-full text-left px-2 py-1.5 text-xs text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)] rounded-lg">
-                Account Settings
-              </button>
-              <button className="w-full text-left px-2 py-1.5 text-xs text-[var(--danger)] hover:bg-[var(--danger-bg)] rounded-lg">
-                Log Out
+
+              <div className="px-3 py-1 text-[10px] uppercase font-bold text-[var(--fg-muted)] tracking-wider">
+                Account
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  if (onLogout) onLogout();
+                }}
+                className="w-full text-left px-3 py-2 text-xs font-semibold text-[var(--red)] hover:bg-[rgba(239,68,68,0.12)] rounded-lg flex items-center gap-2 transition-colors cursor-pointer min-h-[38px]"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                Sign Out / Logout
               </button>
             </div>
           )}

@@ -1,17 +1,26 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Row from "@/models/Row";
-import { getOrSeedDefaultTable } from "@/lib/seed";
+import { getSessionUser } from "@/lib/auth";
+import { getUserTable } from "@/lib/seed";
 
 const MAX_BATCH_SIZE = 1000;
 
 export async function POST(req) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
-    const table = await getOrSeedDefaultTable();
+    const table = await getUserTable(user.id);
     const body = await req.json();
 
-    const { rowsData } = body;
+    const { rowsData } = body || {};
     if (!Array.isArray(rowsData) || rowsData.length === 0) {
       return NextResponse.json(
         { success: false, message: "Invalid payload. 'rowsData' array is required." },
@@ -33,7 +42,6 @@ export async function POST(req) {
       const sanitizedData = {};
       if (rawObj && typeof rawObj === "object") {
         Object.entries(rawObj).forEach(([k, v]) => {
-          // Reject keys starting with $ or containing . (MongoDB injection safety)
           if (!k.startsWith("$") && !k.includes(".") && (validColumnKeys.size === 0 || validColumnKeys.has(k))) {
             sanitizedData[k] = v;
           }
@@ -67,10 +75,18 @@ export async function POST(req) {
 
 export async function PATCH(req) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
-    const table = await getOrSeedDefaultTable();
+    const table = await getUserTable(user.id);
     const body = await req.json();
-    const { rowIds, data } = body;
+    const { rowIds, data } = body || {};
 
     if (!Array.isArray(rowIds) || rowIds.length === 0 || !data || typeof data !== "object") {
       return NextResponse.json(
@@ -103,13 +119,14 @@ export async function PATCH(req) {
       );
     }
 
+    // Only update rows belonging to this user's table!
     await Row.updateMany(
-      { _id: { $in: rowIds } },
+      { _id: { $in: rowIds }, tableId: table._id },
       { $set: updateFields }
     );
 
-    // Fetch updated rows
-    const updatedRows = await Row.find({ _id: { $in: rowIds } }).lean();
+    // Fetch updated rows owned by this user
+    const updatedRows = await Row.find({ _id: { $in: rowIds }, tableId: table._id }).lean();
     const cleanRows = JSON.parse(JSON.stringify(updatedRows));
 
     return NextResponse.json(

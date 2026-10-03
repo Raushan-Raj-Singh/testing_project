@@ -187,7 +187,7 @@ export default function Toolbar({
 
           <button
             type="button"
-            onClick={onAddRow}
+            onClick={() => onAddRow()}
             className="flex-1 py-2 px-3 text-xs font-bold rounded-xl bg-[var(--primary)] text-[#0b0f17] flex items-center justify-center gap-1.5 min-h-[42px] shadow-md cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
@@ -459,7 +459,7 @@ export default function Toolbar({
 
           {/* Primary Action: + Add Lead */}
           <button
-            onClick={onAddRow}
+            onClick={() => onAddRow()}
             aria-label="Add New Lead Row"
             className="px-4 py-1.5 text-xs font-bold rounded-lg bg-[var(--primary)] text-[#0b0f17] hover:bg-[var(--primary-hover)] transition-all flex items-center gap-1.5 shadow-md focus:outline-hidden cursor-pointer"
           >

@@ -1,15 +1,23 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
-import Table from "@/models/Table";
-import { getOrSeedDefaultTable } from "@/lib/seed";
+import { getSessionUser } from "@/lib/auth";
+import { getUserTable } from "@/lib/seed";
 
 export async function POST(req) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
-    const table = await getOrSeedDefaultTable();
+    const table = await getUserTable(user.id);
 
     const body = await req.json();
-    const { name, type, options = [], isFollowup, isPriority } = body;
+    const { name, type, options = [], isFollowup, isPriority } = body || {};
 
     if (!name || typeof name !== "string" || !name.trim()) {
       return NextResponse.json(
@@ -102,7 +110,6 @@ export async function POST(req) {
       .replace(/^_+|_+$/g, "");
     if (!baseSlug) baseSlug = "col";
 
-    // Convert camel/snake format, e.g., "sales_lead" -> "salesLead" or keep clean camelCase
     let baseId = baseSlug.replace(/_([a-z0-9])/g, (_, g1) => g1.toUpperCase());
 
     let generatedId = baseId;
@@ -124,7 +131,8 @@ export async function POST(req) {
     table.columns.push(newColumn);
     await table.save();
 
-    return NextResponse.json({ success: true, data: table }, { status: 201 });
+    const tableData = JSON.parse(JSON.stringify(table));
+    return NextResponse.json({ success: true, data: tableData }, { status: 201 });
   } catch (error) {
     console.error("POST /api/table/column error:", error);
     return NextResponse.json(

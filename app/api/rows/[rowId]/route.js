@@ -1,13 +1,24 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Row from "@/models/Row";
+import { getSessionUser } from "@/lib/auth";
+import { getUserTable } from "@/lib/seed";
 
 export async function PATCH(req, { params }) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
+    const userTable = await getUserTable(user.id);
     const { rowId } = await params;
     const body = await req.json();
-    const { data } = body;
+    const { data } = body || {};
 
     if (!data || typeof data !== "object") {
       return NextResponse.json(
@@ -16,8 +27,9 @@ export async function PATCH(req, { params }) {
       );
     }
 
+    // Verify row existence and table ownership
     const row = await Row.findById(rowId);
-    if (!row) {
+    if (!row || row.tableId.toString() !== userTable._id.toString()) {
       return NextResponse.json(
         { success: false, message: "Row not found." },
         { status: 404 }
@@ -50,16 +62,28 @@ export async function PATCH(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required." },
+        { status: 401 }
+      );
+    }
+
     await dbConnect();
+    const userTable = await getUserTable(user.id);
     const { rowId } = await params;
 
-    const deletedRow = await Row.findByIdAndDelete(rowId);
-    if (!deletedRow) {
+    // Verify row ownership before deletion
+    const row = await Row.findById(rowId);
+    if (!row || row.tableId.toString() !== userTable._id.toString()) {
       return NextResponse.json(
         { success: false, message: "Row not found." },
         { status: 404 }
       );
     }
+
+    await Row.findByIdAndDelete(rowId);
 
     return NextResponse.json(
       { success: true, message: "Row deleted successfully.", data: { id: rowId } },
