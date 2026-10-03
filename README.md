@@ -1,4 +1,4 @@
-# Lead Management Dashboard
+# Lead Management Dashboard 
 
 An enterprise-grade, Excel/CRM-style Lead Management web application featuring dynamic tables, full CRUD, optimistic updates with automatic rollback, custom sorting/filtering, batch updates, CSV import/export with formula injection sanitization, state persistence, and security hardening.
 
