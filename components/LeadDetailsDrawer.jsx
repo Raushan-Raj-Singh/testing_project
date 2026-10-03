@@ -103,8 +103,8 @@ export default function LeadDetailsDrawer({
     ?.find((opt) => opt.label.toLowerCase() === String(statusVal || "").toLowerCase())?.color;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/50 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-[#111827] border-l border-[var(--border)] h-full flex flex-col justify-between shadow-2xl animate-in slide-in-from-right duration-300">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex items-end sm:items-stretch justify-end animate-in fade-in duration-200">
+      <div className="w-full max-w-full sm:max-w-md bg-[#111827] border-t sm:border-t-0 sm:border-l border-[var(--border)] h-[90vh] sm:h-full rounded-t-2xl sm:rounded-t-none flex flex-col justify-between shadow-2xl animate-in slide-in-from-bottom sm:slide-in-from-right duration-300">
         {/* Drawer Header */}
         <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
           <div className="flex items-center gap-2">

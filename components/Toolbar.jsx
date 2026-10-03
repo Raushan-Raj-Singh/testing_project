@@ -40,6 +40,7 @@ export default function Toolbar({
   totalRowsCount = 0,
   onAddColumn,
   onAddRow,
+  onOpenMobileFilter,
 }) {
   const [localSearch, setLocalSearch] = useState(searchQuery || "");
   const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery);
@@ -62,6 +63,9 @@ export default function Toolbar({
     return () => clearTimeout(handler);
   }, [localSearch, onSearchChange]);
 
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
+  const mobileMoreRef = useRef(null);
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (colMenuRef.current && !colMenuRef.current.contains(event.target)) {
@@ -69,6 +73,9 @@ export default function Toolbar({
       }
       if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
         setIsExportMenuOpen(false);
+      }
+      if (mobileMoreRef.current && !mobileMoreRef.current.contains(event.target)) {
+        setIsMobileMoreOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -92,12 +99,12 @@ export default function Toolbar({
     <div className="flex flex-col gap-2 my-1 relative z-30">
       {/* Bulk Action Bar */}
       {selectedCount > 0 && (
-        <div className="flex items-center justify-between px-4 py-2 rounded-xl glass-panel border border-[var(--primary)] shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="flex items-center justify-between px-3 md:px-4 py-2 rounded-xl glass-panel border border-[var(--primary)] shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 text-xs font-mono font-bold rounded-md bg-[var(--primary)] text-[#0b0f17]">
               {selectedCount}
             </span>
-            <span className="text-xs font-semibold text-[var(--fg)]">
+            <span className="text-xs font-semibold text-[var(--fg)] hidden sm:inline">
               {selectedCount === 1 ? "record selected" : "records selected"}
             </span>
           </div>
@@ -107,7 +114,7 @@ export default function Toolbar({
               onClick={onBulkEdit}
               disabled={isDeletingSelected}
               aria-label="Bulk Edit Selected Rows"
-              className="px-3 py-1 text-xs font-semibold rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-[var(--fg)] hover:border-[var(--primary)] transition-all flex items-center gap-1.5 focus:outline-hidden"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-[var(--fg)] hover:border-[var(--primary)] transition-all flex items-center gap-1.5 focus:outline-hidden min-h-[38px]"
             >
               <Edit3 className="w-3.5 h-3.5 text-[var(--primary)]" />
               Bulk Edit ({selectedCount})
@@ -117,7 +124,7 @@ export default function Toolbar({
               onClick={onClearSelection}
               disabled={isDeletingSelected}
               aria-label="Clear row selection"
-              className="px-3 py-1 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-[var(--fg-muted)] hover:text-[var(--fg)] transition-all flex items-center gap-1.5 focus:outline-hidden disabled:opacity-50"
+              className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-[var(--fg-muted)] hover:text-[var(--fg)] transition-all flex items-center gap-1 focus:outline-hidden disabled:opacity-50 min-h-[38px]"
             >
               <X className="w-3.5 h-3.5" />
               Clear
@@ -127,7 +134,7 @@ export default function Toolbar({
               onClick={onDeleteSelected}
               disabled={isDeletingSelected}
               aria-label={`Delete ${selectedCount} selected records`}
-              className="px-3.5 py-1 text-xs font-semibold rounded-lg bg-[var(--red)] text-white hover:bg-[#dc2626] transition-all flex items-center gap-1.5 shadow-xs focus:outline-hidden disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--red)] text-white hover:bg-[#dc2626] transition-all flex items-center gap-1.5 shadow-xs focus:outline-hidden disabled:opacity-50 min-h-[38px]"
             >
               <Trash2 className="w-3.5 h-3.5" />
               {isDeletingSelected ? "Deleting..." : `Delete (${selectedCount})`}
@@ -137,31 +144,140 @@ export default function Toolbar({
       )}
 
       {/* Main Glass Pill Toolbar */}
-      <div className="glass-panel p-2.5 flex flex-wrap items-center justify-between gap-3 shadow-lg relative z-30">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
-          {/* Search Input */}
-          <div className="relative flex-1 min-w-[220px] max-w-sm">
+      <div className="glass-panel p-2.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 shadow-lg relative z-30">
+        {/* Search Bar Container */}
+        <div className="flex items-center gap-2 w-full md:w-auto md:flex-1 max-w-full md:max-w-sm">
+          <div className="relative w-full">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--fg-subtle)] pointer-events-none" />
             <input
               type="text"
               aria-label="Search leads by name, phone, project"
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder="Search leads by name, phone, project..."
-              className="w-full pl-9 pr-8 py-1.5 text-xs rounded-lg border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--primary)] text-[var(--fg)] transition-all placeholder-[var(--fg-subtle)]"
+              placeholder="Search leads..."
+              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border bg-[var(--surface-2)] border-[var(--border)] focus:outline-hidden focus:border-[var(--primary)] text-[var(--fg)] transition-all placeholder-[var(--fg-subtle)] min-h-[42px] md:min-h-[36px]"
             />
             {localSearch && (
               <button
                 type="button"
                 aria-label="Clear Search Input"
                 onClick={() => setLocalSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--fg-subtle)] hover:text-[var(--fg)] p-0.5 rounded focus:outline-hidden"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--fg-subtle)] hover:text-[var(--fg)] p-1 rounded focus:outline-hidden min-h-[32px] min-w-[32px] flex items-center justify-center"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
+        </div>
 
+        {/* Mobile Toolbar Buttons Row (< md screens) */}
+        <div className="flex md:hidden items-center justify-between gap-2 w-full pt-1 border-t border-[var(--border)]/50">
+          <button
+            type="button"
+            onClick={onOpenMobileFilter}
+            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-xl border flex items-center justify-center gap-1.5 min-h-[42px] transition-all ${
+              isFiltered
+                ? "bg-[rgba(245,158,11,0.15)] border-[var(--primary)] text-[var(--primary)] font-bold"
+                : "bg-[var(--surface-2)] border-[var(--border)] text-[var(--fg)]"
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filter {isFiltered && "(Active)"}
+          </button>
+
+          <button
+            type="button"
+            onClick={onAddRow}
+            className="flex-1 py-2 px-3 text-xs font-bold rounded-xl bg-[var(--primary)] text-[#0b0f17] flex items-center justify-center gap-1.5 min-h-[42px] shadow-md cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            Add Lead
+          </button>
+
+          {/* Mobile More Options Menu */}
+          <div className="relative" ref={mobileMoreRef}>
+            <button
+              type="button"
+              onClick={() => setIsMobileMoreOpen((prev) => !prev)}
+              className="py-2 px-3 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface-2)] text-[var(--fg)] flex items-center justify-center gap-1 min-h-[42px] cursor-pointer"
+            >
+              More
+            </button>
+
+            {isMobileMoreOpen && (
+              <div className="absolute right-0 top-full mt-2 z-[100] w-56 rounded-xl bg-[#111827] border border-[var(--border-strong)] shadow-2xl p-2 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMoreOpen(false);
+                    onOpenImport();
+                  }}
+                  className="w-full text-left px-3 py-2.5 text-xs font-medium rounded-lg hover:bg-[var(--surface-2)] flex items-center gap-2 text-[var(--fg)] min-h-[42px]"
+                >
+                  <Upload className="w-4 h-4 text-[var(--primary)]" />
+                  Import CSV
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMoreOpen(false);
+                    if (onExportCurrentView) onExportCurrentView();
+                  }}
+                  className="w-full text-left px-3 py-2.5 text-xs font-medium rounded-lg hover:bg-[var(--surface-2)] flex items-center justify-between text-[var(--fg)] min-h-[42px]"
+                >
+                  <span className="flex items-center gap-2">
+                    <Download className="w-4 h-4 text-[var(--primary)]" />
+                    Export Current View
+                  </span>
+                  <span className="font-mono text-[10px] text-[var(--primary)]">({filteredCount})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMoreOpen(false);
+                    if (onExportAll) onExportAll();
+                  }}
+                  className="w-full text-left px-3 py-2.5 text-xs font-medium rounded-lg hover:bg-[var(--surface-2)] flex items-center justify-between text-[var(--fg)] min-h-[42px]"
+                >
+                  <span className="flex items-center gap-2">
+                    <Download className="w-4 h-4 text-[var(--fg-muted)]" />
+                    Export All Data
+                  </span>
+                  <span className="font-mono text-[10px] text-[var(--fg-muted)]">({totalRowsCount})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMoreOpen(false);
+                    onAddColumn();
+                  }}
+                  className="w-full text-left px-3 py-2.5 text-xs font-medium rounded-lg hover:bg-[var(--surface-2)] flex items-center gap-2 text-[var(--primary)] min-h-[42px]"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Dynamic Column
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMoreOpen(false);
+                    onResetTableView();
+                  }}
+                  className="w-full text-left px-3 py-2.5 text-xs font-medium rounded-lg hover:bg-[var(--surface-2)] flex items-center gap-2 text-[var(--fg-muted)] min-h-[42px]"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Reset View
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop Filter Selects & Action Buttons (hidden on mobile, visible on md+) */}
+        <div className="hidden md:flex flex-wrap items-center gap-2.5 flex-1">
           {/* Status Filter Dropdown */}
           <select
             value={statusFilter}
@@ -280,8 +396,8 @@ export default function Toolbar({
           </div>
         </div>
 
-        {/* Action Buttons Right Group */}
-        <div className="flex items-center gap-2">
+        {/* Action Buttons Right Group (Desktop hidden on mobile, visible on md+) */}
+        <div className="hidden md:flex items-center gap-2">
           {/* Import CSV */}
           <button
             onClick={onOpenImport}

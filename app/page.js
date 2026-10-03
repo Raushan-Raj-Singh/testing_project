@@ -10,6 +10,9 @@ import Toolbar from "@/components/Toolbar";
 import LeadTable from "@/components/LeadTable";
 import KanbanBoard from "@/components/KanbanBoard";
 import LeadDetailsDrawer from "@/components/LeadDetailsDrawer";
+import MobileLeadView from "@/components/MobileLeadView";
+import MobileAddLeadModal from "@/components/MobileAddLeadModal";
+import MobileFilterModal from "@/components/MobileFilterModal";
 
 import AddColumnModal from "@/components/AddColumnModal";
 import ImportModal from "@/components/ImportModal";
@@ -29,6 +32,10 @@ export default function Home() {
   // Navigation & View Mode State
   const [activeView, setActiveView] = useState("table");
   const [activeDrawerLead, setActiveDrawerLead] = useState(null);
+
+  // Mobile Modals State
+  const [isMobileAddLeadOpen, setIsMobileAddLeadOpen] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // Filters & Search State
   const [searchQuery, setSearchQuery] = useState("");
@@ -365,16 +372,20 @@ export default function Home() {
     }
   };
 
-  const handleAddRow = async () => {
+  const handleAddRow = async (rowDataOverride) => {
     try {
-      const initialData = {};
-      (table?.columns || []).forEach((col) => {
-        if (col.type === "checkbox") {
-          initialData[col.id] = false;
-        } else {
-          initialData[col.id] = "";
-        }
-      });
+      let initialData = {};
+      if (rowDataOverride && typeof rowDataOverride === "object" && !Array.isArray(rowDataOverride)) {
+        initialData = rowDataOverride;
+      } else {
+        (table?.columns || []).forEach((col) => {
+          if (col.type === "checkbox") {
+            initialData[col.id] = false;
+          } else {
+            initialData[col.id] = "";
+          }
+        });
+      }
 
       const res = await fetch("/api/rows", {
         method: "POST",
@@ -392,7 +403,7 @@ export default function Home() {
         setStatusFilter("ALL");
         setPriorityFilter("ALL");
         setFollowupFilter("ALL");
-        showToast("New row added.");
+        showToast("New lead added successfully.");
       } else {
         showToast(result.message || "Failed to add row.", true);
       }
@@ -549,10 +560,11 @@ export default function Home() {
             setEditingColumn(null);
             setIsAddColumnOpen(true);
           }}
-          onAddRow={handleAddRow}
+          onAddRow={() => setIsMobileAddLeadOpen(true)}
+          onOpenMobileFilter={() => setIsMobileFilterOpen(true)}
         />
 
-        {/* Data View Section: AG Grid Table or Kanban Board */}
+        {/* Data View Section: AG Grid Table (Desktop) / Mobile Lead Cards (Mobile) / Kanban Board */}
         <div className="flex-1 min-h-[450px] relative z-10">
           {activeView === "kanban" ? (
             <KanbanBoard
@@ -562,28 +574,53 @@ export default function Home() {
               onRowUpdate={handleUpdateCell}
             />
           ) : (
-            <LeadTable
-              ref={tableRef}
-              tableId={table?._id}
-              columns={table?.columns || []}
-              rows={filteredRows}
-              totalRowsCount={rows.length}
-              hiddenColumnIds={hiddenColumnIds}
-              loading={loading}
-              error={error}
-              onRowUpdate={handleUpdateCell}
-              onRowDelete={(row) => setDeleteRowTarget(row)}
-              onEditColumn={(col) => {
-                setEditingColumn(col);
-                setIsAddColumnOpen(true);
-              }}
-              onDeleteColumn={(col) => setDeleteColTarget(col)}
-              onSelectionChanged={setSelectedRows}
-              onOpenDrawer={(row) => setActiveDrawerLead(row)}
-              onAddRow={handleAddRow}
-              onResetFilters={handleResetAllFilters}
-              onRetryLoad={fetchData}
-            />
+            <>
+              {/* Desktop AG Grid Table View (hidden on mobile < md, visible on md+) */}
+              <div className="hidden md:block">
+                <LeadTable
+                  ref={tableRef}
+                  tableId={table?._id}
+                  columns={table?.columns || []}
+                  rows={filteredRows}
+                  totalRowsCount={rows.length}
+                  hiddenColumnIds={hiddenColumnIds}
+                  loading={loading}
+                  error={error}
+                  onRowUpdate={handleUpdateCell}
+                  onRowDelete={(row) => setDeleteRowTarget(row)}
+                  onEditColumn={(col) => {
+                    setEditingColumn(col);
+                    setIsAddColumnOpen(true);
+                  }}
+                  onDeleteColumn={(col) => setDeleteColTarget(col)}
+                  onSelectionChanged={setSelectedRows}
+                  onOpenDrawer={(row) => setActiveDrawerLead(row)}
+                  onAddRow={handleAddRow}
+                  onResetFilters={handleResetAllFilters}
+                  onRetryLoad={fetchData}
+                />
+              </div>
+
+              {/* Mobile Lead Cards View (visible on mobile < md, hidden on md+) */}
+              <div className="block md:hidden">
+                <MobileLeadView
+                  rows={filteredRows}
+                  columns={table?.columns || []}
+                  loading={loading}
+                  error={error}
+                  selectedRows={selectedRows}
+                  onSelectionChanged={setSelectedRows}
+                  onOpenDrawer={(row) => setActiveDrawerLead(row)}
+                  onRowDelete={(row) => setDeleteRowTarget(row)}
+                  onAddRow={() => setIsMobileAddLeadOpen(true)}
+                  onResetFilters={handleResetAllFilters}
+                  onBulkEdit={() => setIsBulkEditOpen(true)}
+                  onDeleteSelected={() => setIsDeleteSelectedOpen(true)}
+                  onClearSelection={handleClearSelection}
+                  isDeletingSelected={isDeletingSelected}
+                />
+              </div>
+            </>
           )}
         </div>
 
@@ -603,9 +640,29 @@ export default function Home() {
         onSaveLead={handleSaveDrawerLead}
       />
 
+      {/* Mobile Add Lead & Filter Modals */}
+      <MobileAddLeadModal
+        isOpen={isMobileAddLeadOpen}
+        onClose={() => setIsMobileAddLeadOpen(false)}
+        columns={table?.columns || []}
+        onAddLead={handleAddRow}
+      />
+
+      <MobileFilterModal
+        isOpen={isMobileFilterOpen}
+        onClose={() => setIsMobileFilterOpen(false)}
+        columns={table?.columns || []}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        priorityFilter={priorityFilter}
+        onPriorityFilterChange={setPriorityFilter}
+        followupFilter={followupFilter}
+        onFollowupFilterChange={setFollowupFilter}
+        onResetFilters={handleResetAllFilters}
+      />
+
       {/* Modals */}
       <AddColumnModal
-
         isOpen={isAddColumnOpen}
         onClose={() => {
           setIsAddColumnOpen(false);
