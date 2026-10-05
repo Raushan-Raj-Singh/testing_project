@@ -409,6 +409,7 @@ const LeadTable = forwardRef(function LeadTable(
 
     onResetFilters,
     onRetryLoad,
+    onReorderColumns,
   },
   ref
 ) {
@@ -444,6 +445,33 @@ const LeadTable = forwardRef(function LeadTable(
       // Ignore storage errors
     }
   }, [tableId]);
+
+  const handleColumnMoved = useCallback(
+    (event) => {
+      saveGridState();
+
+      if (event && event.finished === false) return;
+      if (!gridRef.current?.api) return;
+
+      const state = gridRef.current.api.getColumnState();
+      if (!state || !state.length) return;
+
+      const currentColumnIds = columns.map((c) => c.id);
+      const newOrder = state
+        .map((s) => s.colId)
+        .filter((id) => currentColumnIds.includes(id));
+
+      if (
+        newOrder.length === currentColumnIds.length &&
+        newOrder.some((id, idx) => id !== currentColumnIds[idx])
+      ) {
+        if (onReorderColumns) {
+          onReorderColumns(newOrder);
+        }
+      }
+    },
+    [columns, onReorderColumns, saveGridState]
+  );
 
   const onGridReady = useCallback(() => {
     if (!tableId || !gridRef.current?.api || typeof window === "undefined") return;
@@ -1008,7 +1036,7 @@ const LeadTable = forwardRef(function LeadTable(
         getRowStyle={getRowStyle}
         onGridReady={onGridReady}
         onColumnResized={saveGridState}
-        onColumnMoved={saveGridState}
+        onColumnMoved={handleColumnMoved}
         onCellValueChanged={handleCellValueChanged}
         onSelectionChanged={handleSelectionChanged}
         popupParent={typeof document !== "undefined" ? document.body : undefined}

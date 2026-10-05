@@ -56,8 +56,36 @@ const PRIORITY_ORDER = {
   Low: 3,
 };
 
+export function parseFollowupTimestamp(dateStr) {
+  if (!dateStr || (typeof dateStr !== "string" && !(dateStr instanceof Date))) {
+    return null;
+  }
+
+  if (typeof dateStr === "string") {
+    const trimmed = dateStr.trim();
+    if (!trimmed) return null;
+
+    const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+    if (isoMatch) {
+      const year = parseInt(isoMatch[1], 10);
+      const month = parseInt(isoMatch[2], 10) - 1;
+      const day = parseInt(isoMatch[3], 10);
+      const hour = isoMatch[4] ? parseInt(isoMatch[4], 10) : 0;
+      const minute = isoMatch[5] ? parseInt(isoMatch[5], 10) : 0;
+      const second = isoMatch[6] ? parseInt(isoMatch[6], 10) : 0;
+      const d = new Date(year, month, day, hour, minute, second);
+      return isNaN(d.getTime()) ? null : d.getTime();
+    }
+  }
+
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d.getTime();
+}
+
 export function sortRowsByFollowupAndPriority(rows, columns = []) {
-  const followupCol = columns.find((c) => c.special === "followup");
+  const followupCol =
+    columns.find((c) => c.special === "followup") ||
+    columns.find((c) => c.type === "date" || c.type === "datetime");
   const priorityCol = columns.find((c) => c.special === "priority");
 
   const today = new Date();
@@ -77,6 +105,20 @@ export function sortRowsByFollowupAndPriority(rows, columns = []) {
 
     if (aCatRank !== bCatRank) {
       return aCatRank - bCatRank;
+    }
+
+    // Within the same follow-up category, sort chronologically by date/datetime ascending
+    const aTime = parseFollowupTimestamp(aFollowVal);
+    const bTime = parseFollowupTimestamp(bFollowVal);
+
+    if (aTime !== null && bTime !== null) {
+      if (aTime !== bTime) {
+        return aTime - bTime;
+      }
+    } else if (aTime !== null && bTime === null) {
+      return -1;
+    } else if (aTime === null && bTime !== null) {
+      return 1;
     }
 
     // Secondary sort by priority

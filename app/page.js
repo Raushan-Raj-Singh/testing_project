@@ -370,6 +370,43 @@ export default function Home() {
     }
   };
 
+  const handleReorderColumns = useCallback(
+    async (newColumnOrder) => {
+      setTable((prev) => {
+        if (!prev || !prev.columns) return prev;
+        const colMap = new Map(prev.columns.map((c) => [c.id, c]));
+        const reordered = [];
+        newColumnOrder.forEach((id) => {
+          if (colMap.has(id)) {
+            reordered.push(colMap.get(id));
+            colMap.delete(id);
+          }
+        });
+        colMap.forEach((col) => reordered.push(col));
+        return { ...prev, columns: reordered };
+      });
+
+      try {
+        const res = await fetch("/api/table", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ columnOrder: newColumnOrder }),
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          setTable(result.data);
+        } else {
+          showToast(result.message || "Failed to save column order.", true);
+        }
+      } catch (err) {
+        console.error("Failed to save column order:", err);
+        showToast("Error saving column order.", true);
+      }
+    },
+    [showToast]
+  );
+
   const handleConfirmDeleteColumn = async () => {
     if (!deleteColTarget) return;
 
@@ -456,12 +493,17 @@ export default function Home() {
         setRows((prev) => {
           const updated = prev.map((r) => (r._id === rowId ? result.data : r));
           const cols = table?.columns || [];
-          const followupCol = cols.find((c) => c.special === "followup");
+          const followupCol =
+            cols.find((c) => c.special === "followup") ||
+            cols.find((c) => c.type === "date" || c.type === "datetime");
           const priorityCol = cols.find((c) => c.special === "priority");
 
           const updatedKeys = Object.keys(updatedDataField);
           const affectsSorting = updatedKeys.some(
-            (k) => (followupCol && k === followupCol.id) || (priorityCol && k === priorityCol.id)
+            (k) =>
+              (followupCol && k === followupCol.id) ||
+              (priorityCol && k === priorityCol.id) ||
+              cols.some((c) => (c.type === "date" || c.type === "datetime") && c.id === k)
           );
 
           return affectsSorting ? sortRowsByFollowupAndPriority(updated, cols) : updated;
@@ -634,6 +676,7 @@ export default function Home() {
                   onAddRow={handleAddRow}
                   onResetFilters={handleResetAllFilters}
                   onRetryLoad={fetchData}
+                  onReorderColumns={handleReorderColumns}
                 />
               </div>
 

@@ -78,7 +78,7 @@ export async function PATCH(req) {
 
     await dbConnect();
     const body = await req.json();
-    const { name } = body || {};
+    const { name, columns, columnOrder } = body || {};
 
     const table = await getUserTable(user.id);
     if (!table) {
@@ -89,6 +89,27 @@ export async function PATCH(req) {
     }
 
     if (name) table.name = name;
+
+    const targetOrder = columnOrder || columns;
+    if (Array.isArray(targetOrder) && targetOrder.length > 0) {
+      const colMap = new Map(table.columns.map((c) => [c.id, c]));
+      const reordered = [];
+
+      targetOrder.forEach((item) => {
+        const colId = typeof item === "string" ? item : item?.id;
+        if (colId && colMap.has(colId)) {
+          reordered.push(colMap.get(colId));
+          colMap.delete(colId);
+        }
+      });
+
+      // Append any remaining columns that were not specified in targetOrder
+      colMap.forEach((col) => reordered.push(col));
+
+      table.columns = reordered;
+      table.markModified("columns");
+    }
+
     await table.save();
 
     const tableData = JSON.parse(JSON.stringify(table));
