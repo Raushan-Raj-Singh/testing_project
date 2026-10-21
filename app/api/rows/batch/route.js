@@ -119,14 +119,16 @@ export async function PATCH(req) {
       );
     }
 
-    // Only update rows belonging to this user's table!
-    await Row.updateMany(
-      { _id: { $in: rowIds }, tableId: table._id },
-      { $set: updateFields }
-    );
+    // If user is Admin, allow batch update across authorized team rows
+    let queryFilter = { _id: { $in: rowIds }, tableId: table._id };
+    if (user.role === "admin") {
+      queryFilter = { _id: { $in: rowIds } };
+    }
 
-    // Fetch updated rows owned by this user
-    const updatedRows = await Row.find({ _id: { $in: rowIds }, tableId: table._id }).lean();
+    await Row.updateMany(queryFilter, { $set: updateFields });
+
+    // Fetch updated rows
+    const updatedRows = await Row.find(queryFilter).lean();
     const cleanRows = JSON.parse(JSON.stringify(updatedRows));
 
     return NextResponse.json(

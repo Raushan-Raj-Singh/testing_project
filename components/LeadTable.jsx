@@ -535,7 +535,7 @@ const LeadTable = forwardRef(function LeadTable(
               </span>
             )}
           </div>
-          {colDefObj && (
+          {colDefObj && colId !== "ownerName" && (
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 type="button"
@@ -605,16 +605,41 @@ const LeadTable = forwardRef(function LeadTable(
       const isFollowup = column.special === "followup";
       const isHidden = hiddenColumnIds.includes(colId);
 
+      const isSystemCol = colId === "ownerName";
+
       const colDef = {
         field: colId,
         headerName: column.name,
         headerComponent: CustomHeader,
-        editable: true,
+        editable: isSystemCol ? false : true,
         resizable: true,
         sortable: true,
         hide: isHidden,
         minWidth: 140,
+        valueGetter: (params) => {
+          if (!params.data) return "";
+          if (colId in params.data) {
+            return params.data[colId];
+          }
+          if (params.data.data && colId in params.data.data) {
+            return params.data.data[colId];
+          }
+          return "";
+        },
       };
+
+      if (isSystemCol) {
+        colDef.cellRenderer = (params) => {
+          const val = params.data?.ownerName || params.value;
+          return (
+            <div className="flex items-center h-full">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-[rgba(59,130,246,0.12)] text-[#60a5fa] border border-[rgba(59,130,246,0.25)]">
+                {val || "Unassigned"}
+              </span>
+            </div>
+          );
+        };
+      }
 
       switch (column.type) {
         case "longText":
@@ -845,7 +870,11 @@ const LeadTable = forwardRef(function LeadTable(
 
   const rowData = useMemo(() => {
     return rows.map((row) => ({
-      _rowId: row._id,
+      _rowId: row._rowId || row._id || row.id,
+      _tableId: row.tableId || row._tableId,
+      ownerId: row.ownerId,
+      ownerName: row.ownerName,
+      ownerEmail: row.ownerEmail,
       ...(row.data || {}),
     }));
   }, [rows]);

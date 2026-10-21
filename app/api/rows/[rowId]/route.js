@@ -27,12 +27,19 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    // Verify row existence and table ownership
+    // Verify row existence and ownership
     const row = await Row.findById(rowId);
-    if (!row || row.tableId.toString() !== userTable._id.toString()) {
+    if (!row) {
       return NextResponse.json(
         { success: false, message: "Row not found." },
         { status: 404 }
+      );
+    }
+
+    if (user.role !== "admin" && row.tableId.toString() !== userTable._id.toString()) {
+      return NextResponse.json(
+        { success: false, message: "Access forbidden. Row not found or access denied." },
+        { status: 403 }
       );
     }
 
@@ -76,10 +83,17 @@ export async function DELETE(req, { params }) {
 
     // Verify row ownership before deletion
     const row = await Row.findById(rowId);
-    if (!row || row.tableId.toString() !== userTable._id.toString()) {
+    if (!row) {
       return NextResponse.json(
         { success: false, message: "Row not found." },
         { status: 404 }
+      );
+    }
+
+    if (user.role !== "admin" && row.tableId.toString() !== userTable._id.toString()) {
+      return NextResponse.json(
+        { success: false, message: "Access forbidden. Row not found or access denied." },
+        { status: 403 }
       );
     }
 

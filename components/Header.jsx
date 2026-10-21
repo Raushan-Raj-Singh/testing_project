@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Users, Bell, Settings, ChevronDown, LogOut, User as UserIcon } from "lucide-react";
+import { Users, Bell, Settings, ChevronDown, LogOut, User as UserIcon, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 export default function Header({
   activeView = "table",
@@ -30,6 +31,7 @@ export default function Header({
 
   const userName = currentUser?.name || "User Account";
   const userEmail = currentUser?.email || "user@example.com";
+  const isAdmin = currentUser?.role === "admin";
   const initials = userName
     .split(" ")
     .filter(Boolean)
@@ -62,8 +64,19 @@ export default function Header({
         </div>
       </div>
 
-      {/* Right: View Switcher, Notification, User Profile */}
+      {/* Right: View Switcher, Admin Link, Notification, User Profile */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto sm:ml-0">
+        {/* Admin Link if role === "admin" */}
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-[rgba(245,158,11,0.15)] text-[var(--orange)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.25)] transition-all flex items-center gap-1.5 shrink-0 min-h-[36px]"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            Admin Dashboard
+          </Link>
+        )}
+
         {/* View Switcher toggle option if passed */}
         {onViewChange && (
           <div className="hidden sm:flex items-center p-1 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] mr-1">
@@ -109,9 +122,25 @@ export default function Header({
           {isUserMenuOpen && (
             <div className="absolute right-0 mt-2 w-60 max-w-[calc(100vw-2rem)] p-2 rounded-xl bg-[#111827] border border-[var(--border-strong)] shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100">
               <div className="px-3 py-2 border-b border-[var(--border)] mb-1 min-w-0">
-                <p className="text-xs font-bold text-[var(--fg)] truncate" title={userName}>{userName}</p>
-                <p className="text-[11px] text-[var(--fg-subtle)] truncate font-mono" title={userEmail}>{userEmail}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-[var(--fg)] truncate" title={userName}>{userName}</p>
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-[var(--surface-2)] text-[var(--fg-muted)]">
+                    {currentUser?.role || "user"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[var(--fg-subtle)] truncate font-mono mt-0.5" title={userEmail}>{userEmail}</p>
               </div>
+
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setIsUserMenuOpen(false)}
+                  className="w-full text-left px-3 py-2 text-xs font-semibold text-[var(--orange)] hover:bg-[rgba(245,158,11,0.12)] rounded-lg flex items-center gap-2 transition-colors min-h-[38px] mb-1"
+                >
+                  <ShieldCheck className="w-4 h-4 shrink-0" />
+                  Admin Dashboard
+                </Link>
+              )}
 
               <div className="px-3 py-1 text-[10px] uppercase font-bold text-[var(--fg-muted)] tracking-wider">
                 Account

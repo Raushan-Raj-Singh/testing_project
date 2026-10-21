@@ -51,8 +51,11 @@ export async function proxy(req) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  // If visiting protected page (like /) while NOT authenticated, redirect to /login
+  // If visiting protected page (like / or /admin) while NOT authenticated, redirect to /login
   if (!isAuthPage && !isValidSession) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
+    }
     return NextResponse.redirect(new URL("/login", req.url));
   }
 

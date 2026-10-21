@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Row from "@/models/Row";
+import Table from "@/models/Table";
 import { getSessionUser } from "@/lib/auth";
 import { getUserTable } from "@/lib/seed";
 
@@ -146,6 +147,39 @@ export async function DELETE(req, { params }) {
     await dbConnect();
     const table = await getUserTable(user.id);
     const { columnId } = await params;
+
+    // Prevent deleting system presentation/virtual columns (e.g. ownerName)
+    if (columnId === "ownerName") {
+      return NextResponse.json(
+        {
+          success: true,
+          message: "System presentation column ownerName removed from view.",
+        },
+        { status: 200 }
+      );
+    }
+
+    // If user is Admin, allow deleting column from master / all tables & rows
+    if (user.role === "admin") {
+      const allTables = await Table.find({});
+      for (const t of allTables) {
+        const idx = t.columns.findIndex((c) => c.id === columnId);
+        if (idx !== -1) {
+          t.columns.splice(idx, 1);
+          await t.save();
+        }
+      }
+      const unsetField = `data.${columnId}`;
+      await Row.updateMany({}, { $unset: { [unsetField]: "" } });
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Column deleted successfully across team tables.`,
+        },
+        { status: 200 }
+      );
+    }
 
     const colIndex = table.columns.findIndex((c) => c.id === columnId);
     if (colIndex === -1) {
